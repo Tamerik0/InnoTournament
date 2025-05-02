@@ -52,6 +52,7 @@ public abstract class ItemGeneratorBlock extends BaseEntityBlock {
 		JsonArray d;
 		var path = Platform.getConfigFolder().resolve(jsonDataPath);
 		try {
+
 			d = JsonParser.parseReader(Files.newBufferedReader(path)).getAsJsonArray();
 			for (var i : d) {
 				if( Minecraft.getInstance().getSingleplayerServer() != null) {
@@ -59,8 +60,9 @@ public abstract class ItemGeneratorBlock extends BaseEntityBlock {
 					data.add(lvlData);
 				}
 			}
-		} catch (IOException e) {
+		} catch (Exception e) {
 			try {
+				Files.createDirectories(path.getParent());
 				Files.createFile(path);
 				Files.writeString(path, "[]");
 			} catch (IOException ex) {
