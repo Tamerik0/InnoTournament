@@ -1,0 +1,17 @@
+{
+  "required": true,
+  "package": "eu.pb4.sidebars.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "minVersion": "0.8",
+  "client": [
+  ],
+  "mixins": [
+    "ClientboundSetDisplayObjectivePacketAccessor",
+    "ClientboundSetPlayerTeamPacketParametersAccessor",
+    "ServerPlayNetworkHandlerMixin",
+    "SOUS2CPacketAccessor"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

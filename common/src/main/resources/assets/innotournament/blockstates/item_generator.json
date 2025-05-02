@@ -1,0 +1,5 @@
+{
+  "variants": {
+    "": { "model": "innotournament:block/item_generator" }
+  }
+}
