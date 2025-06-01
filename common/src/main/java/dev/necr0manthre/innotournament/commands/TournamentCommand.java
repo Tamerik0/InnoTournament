@@ -1,5 +1,6 @@
 package dev.necr0manthre.innotournament.commands;
 
+import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.mojang.brigadier.CommandDispatcher;
@@ -182,7 +183,7 @@ public class TournamentCommand {
 		action.accept(selectedData);
 		var json = TournamentData.CODEC.encode(selectedData, JsonOps.INSTANCE, new JsonObject()).getOrThrow();
 		try {
-			Files.writeString(selectedTournamentPath, json.toString());
+			Files.writeString(selectedTournamentPath, new GsonBuilder().setPrettyPrinting().create().toJson(json));
 			if (Tournament.get(ctx.getSource().getServer()) == null || Tournament.get(ctx.getSource().getServer()).getPhase() == 0)
 				Tournament.setTournament(ctx.getSource().getServer(), selectedData.createTournament(selectedTournamentPath));
 		} catch (IOException e) {

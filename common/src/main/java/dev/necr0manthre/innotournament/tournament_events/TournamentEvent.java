@@ -4,29 +4,27 @@ import dev.necr0manthre.innotournament.tournament.Tournament;
 import org.apache.logging.log4j.util.TriConsumer;
 
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
-public class TournamentEvent<T, V> extends AbstractTournamentEvent<T> {
-
-	private final AtomicReference<V> reference = new AtomicReference<>();
-	private final TriConsumer<Tournament, Consumer<T>, AtomicReference<V>> subscribeAction;
-	private final TriConsumer<Tournament, Consumer<T>, V> removeAction;
+public abstract class TournamentEvent<T, V> extends AbstractTournamentEvent<T> {
 	private Tournament tournament;
 	private Consumer<T> callback;
-
-	public TournamentEvent(TriConsumer<Tournament, Consumer<T>, AtomicReference<V>> subscribeAction, TriConsumer<Tournament, Consumer<T>, V> removeAction) {
-		this.subscribeAction = subscribeAction;
-		this.removeAction = removeAction;
-	}
+	private V huy;
 
 	@Override
 	protected void subscribe(Tournament tournament, Consumer<T> callback) {
 		this.tournament = tournament;
-		subscribeAction.accept(tournament, callback, reference);
+		this.callback = callback;
+		huy = subscribeInternal(tournament, callback);
 	}
 
 	@Override
 	public void remove() {
-		removeAction.accept(tournament, callback, reference.get());
+		removeInternal(tournament, callback, huy);
 	}
+
+	protected abstract V subscribeInternal(Tournament tournament, Consumer<T> callback);
+
+	protected abstract void removeInternal(Tournament tournament, Consumer<T> callback, V obj);
 }

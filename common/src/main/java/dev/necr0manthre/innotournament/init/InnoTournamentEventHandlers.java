@@ -8,6 +8,7 @@ import dev.necr0manthre.innotournament.tournament_events.event_data.ISourcePlaye
 import dev.necr0manthre.innotournament.tournament_events.handlers.WorldBorderAction;
 import dev.necr0manthre.innotournament.tournament_events.parsing.IParser;
 import dev.necr0manthre.innotournament.tournament_events.parsing.TournamentEventHandlerParserRegistry;
+import dev.necr0manthre.innotournament.tournament_events.parsing.parsers.MultiArgumentParser;
 import dev.necr0manthre.innotournament.tournament_events.parsing.parsers.OneArgumentParser;
 import dev.necr0manthre.innotournament.tournament_events.parsing.parsers.SimpleDecoder;
 import dev.necr0manthre.innotournament.tournament_events.parsing.parsers.TwoArgumentParser;
@@ -19,7 +20,8 @@ public interface InnoTournamentEventHandlers {
 	IParser<String, ITournamentEventListener<Object>> LOG_EVENT = register(new SimpleDecoder<>("log", () -> (tournament, obj) -> Innotournament.LOGGER.info(obj.toString())));
 	IParser<String, ITournamentEventListener<Object>> PLACE_START_BOX = register(new SimpleDecoder<>("place_start_box", () -> (tournament, obj) -> tournament.placeStartBox()));
 	IParser<String, ITournamentEventListener<Object>> REMOVE_START_BOX = register(new SimpleDecoder<>("remove_start_box", () -> (tournament, obj) -> tournament.removeStartBox()));
-	IParser<String, ITournamentEventListener<ISourcePlayerProvider>> SCORE = register(new OneArgumentParser<>("add_score", score -> (tournament, playerProvider) -> TournamentTeamManager.get(tournament.getServer()).get(playerProvider.getSourcePlayer().getTeam()).score += Integer.parseInt(score)));
+	IParser<String, ITournamentEventListener<ISourcePlayerProvider>> SCORE = register(new OneArgumentParser<>("add_score", score -> (tournament, playerProvider) -> tournament.addScores(playerProvider.getSourcePlayer(), Integer.parseInt(score))));
+	IParser<String, ITournamentEventListener<ISourcePlayerProvider>> SCORE_FROM_LIVES = register(new MultiArgumentParser<>("add_score_by_lives", scores -> (tournament, playerProvider) -> tournament.addScores(playerProvider.getSourcePlayer(), Integer.parseInt(scores[playerProvider.getSourcePlayer().lives]))));
 	IParser<String, ITournamentEventListener<Object>> EXECUTE_COMMAND = register(new OneArgumentParser<>("execute_command", cmd -> (tournament, obj) -> {
 		try {
 			tournament.getServer().getCommands().getDispatcher().execute(cmd, tournament.getServer().createCommandSourceStack().withPermission(2));

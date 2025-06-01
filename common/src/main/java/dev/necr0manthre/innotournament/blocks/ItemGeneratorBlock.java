@@ -55,10 +55,10 @@ public abstract class ItemGeneratorBlock extends BaseEntityBlock {
 
 			d = JsonParser.parseReader(Files.newBufferedReader(path)).getAsJsonArray();
 			for (var i : d) {
-				if( Minecraft.getInstance().getSingleplayerServer() != null) {
+//				if( Minecraft.getInstance().getSingleplayerServer() != null) {
 					var lvlData = LevelData.load(i.getAsJsonObject(), provider);
 					data.add(lvlData);
-				}
+//				}
 			}
 		} catch (Exception e) {
 			try {

@@ -1,7 +1,8 @@
 package dev.necr0manthre.innotournament.tournament_events.event_data;
 
+import dev.necr0manthre.innotournament.tournament.TournamentPlayer;
 import net.minecraft.world.entity.player.Player;
 
 public interface ITargetPlayerProvider {
-	Player getTargetPlayer();
+	TournamentPlayer getTargetPlayer();
 }
