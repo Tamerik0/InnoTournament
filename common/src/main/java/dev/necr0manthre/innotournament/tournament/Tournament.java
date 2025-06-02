@@ -13,8 +13,11 @@ import eu.pb4.sidebars.api.Sidebar;
 import eu.pb4.sidebars.api.SidebarInterface;
 import eu.pb4.sidebars.api.lines.ImmutableSidebarLine;
 import lombok.Getter;
+import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
+import net.minecraft.network.chat.ClickEvent;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.HoverEvent;
 import net.minecraft.network.chat.numbers.BlankFormat;
 import net.minecraft.network.chat.numbers.NumberFormat;
 import net.minecraft.resources.ResourceKey;
@@ -144,6 +147,8 @@ public class Tournament {
 		}));
 	}
 
+	private HashMap<UUID, Integer> lastWarningTicks = new HashMap<>();
+
 	public void checkPlayer(ServerPlayer player) {
 		if (phase == 1) {
 			if (!player.hasPermissions(4)) {
@@ -158,6 +163,27 @@ public class Tournament {
 		} else if (phase == 2) {
 			var tournamentPlayer = TournamentPlayerManager.get(getServer()).get(player);
 			if (tournamentPlayer.tournament != null && tournamentPlayer.tournament.get() == this) return;
+			if (getTeamManager().getTeam(tournamentPlayer) == null) {
+				tournamentPlayer.player.setGameMode(GameType.SPECTATOR);
+				var lastWarning = lastWarningTicks.computeIfAbsent(tournamentPlayer.player.getUUID(), u -> 0);
+				if (getServer().getTickCount() - lastWarning > 1000) {
+					lastWarningTicks.put(tournamentPlayer.player.getUUID(), getServer().getTickCount());
+					tournamentPlayer.player.sendSystemMessage(
+							Component.literal("You don't have team. But you must have team to participate. You can create team with only you through ")
+									.append(Component.literal("/teams create <YourAwesomeTeamName>")
+											        .withStyle(ChatFormatting.AQUA)
+											        .withStyle(style -> style
+													                            .withHoverEvent(new HoverEvent.ShowText(Component.literal("<Yea, it's clickable>")))
+													                            .withClickEvent(new ClickEvent.SuggestCommand("/teams create "))))
+									.append(Component.literal(" . But playing alone sucks, for more info see"))
+									.append(Component.literal("/tournament help")
+											        .withStyle(ChatFormatting.AQUA)
+											        .withStyle(style -> style
+													                            .withHoverEvent(new HoverEvent.ShowText(Component.literal("<Yea, it's clickable>")))
+													                            .withClickEvent(new ClickEvent.RunCommand("/tournament help"))))
+									.append(" .(It's really important)"));
+				}
+			}
 			tournamentPlayer.tournament = new WeakReference<>(this);
 			tournamentPlayer.lives = 3;
 		}
@@ -186,7 +212,7 @@ public class Tournament {
 			if (team != null) {
 				lines.add(new ImmutableSidebarLine(i--, Component.literal("Score: " + team.score), BlankFormat.INSTANCE));
 				for (var tournamentPlayer : team.getPlayers()) {
-					lines.add(new ImmutableSidebarLine(i--, Component.literal(tournamentPlayer.player.getScoreboardName()).append("  [%d]".formatted(tournamentPlayer.lives)), BlankFormat.INSTANCE));
+					lines.add(new ImmutableSidebarLine(i--, Component.literal(tournamentPlayer.getName()).append("  [%d]".formatted(tournamentPlayer.lives)), BlankFormat.INSTANCE));
 				}
 			}
 			lines.add(new ImmutableSidebarLine(i--, Component.literal(""), BlankFormat.INSTANCE));
@@ -243,7 +269,19 @@ public class Tournament {
 		PlayerEvent.PLAYER_RESPAWN.register(this::handleRespawn);
 		TickEvent.SERVER_POST.register(this::tick);
 		startTime = getServer().overworld().getGameTime();
-		getServer().overworld().getWorldBorder().setCenter(tournamentSpawn.getX(), tournamentSpawn.getZ());
+		if (tournamentSpawnDimension.equals(Level.OVERWORLD)) {
+			getServer().overworld().getWorldBorder().setCenter(tournamentSpawn.getX(), tournamentSpawn.getZ());
+			getServer().getLevel(Level.NETHER).getWorldBorder().setCenter(tournamentSpawn.getX() * 8, tournamentSpawn.getZ() * 8);
+			getServer().getLevel(Level.END).getWorldBorder().setCenter(0, 0);
+		} else if (tournamentSpawnDimension.equals(Level.NETHER)) {
+			getServer().getLevel(Level.NETHER).getWorldBorder().setCenter(tournamentSpawn.getX(), tournamentSpawn.getZ());
+			getServer().overworld().getWorldBorder().setCenter(tournamentSpawn.getX() * 8, tournamentSpawn.getZ() * 8);
+			getServer().getLevel(Level.END).getWorldBorder().setCenter(0, 0);
+		} else {
+			getServer().getLevel(Level.END).getWorldBorder().setCenter(tournamentSpawn.getX(), tournamentSpawn.getZ());
+			getServer().overworld().getWorldBorder().setCenter(tournamentSpawn.getX(), tournamentSpawn.getZ());
+			getServer().getLevel(Level.END).getWorldBorder().setCenter(tournamentSpawn.getX() / 8, tournamentSpawn.getZ() / 8);
+		}
 		getServer().getLevel(tournamentSpawnDimension).setDefaultSpawnPos(tournamentSpawn, 0);
 		getServer().setPvpAllowed(true);
 		for (var player : getServer().getPlayerList().getPlayers()) {
@@ -264,6 +302,8 @@ public class Tournament {
 	}
 
 	private void tick(MinecraftServer server) {
+		if (phase != 2)
+			return;
 		TournamentTeam t = null;
 		boolean end = true;
 		for (var team : getTeamManager().getTeams()) {
@@ -289,9 +329,9 @@ public class Tournament {
 				updateSidebars();
 			}
 			var top = getTopTeams(getTeamManager().getTeams().size());
-			getServer().getPlayerList().broadcastSystemMessage(Component.literal("Турнир завершён! Победила команда ").append(top.get(0).getPlayerTeam().getDisplayName()).append(" (" + top.get(0).getPlayers().stream().map(p -> p.player.getScoreboardName()).collect(Collectors.joining(" ")) + " )"), true);
+			getServer().getPlayerList().broadcastSystemMessage(Component.literal("Турнир завершён! Победила команда ").append(top.get(0).getPlayerTeam().getDisplayName()).append(" (" + top.get(0).getPlayers().stream().map(TournamentPlayer::getName).collect(Collectors.joining(" ")) + " )"), false);
 			for (int i = 0; i < top.size(); i++) {
-				getServer().getPlayerList().broadcastSystemMessage(Component.literal("[" + (i + 1) + "] ").append(top.get(i).getPlayerTeam().getDisplayName()).append(" " + top.get(i).score).append(" (" + top.get(i).getPlayers().stream().map(p -> p.player.getScoreboardName()).collect(Collectors.joining(" ")) + " )"), true);
+				getServer().getPlayerList().broadcastSystemMessage(Component.literal("[" + (i + 1) + "] ").append(top.get(i).getPlayerTeam().getDisplayName()).append(" " + top.get(i).score).append(" (" + top.get(i).getPlayers().stream().map(TournamentPlayer::getName).collect(Collectors.joining(" ")) + " )"), false);
 			}
 			onEnd.invoker().accept(null);
 			phase = 3;
@@ -299,7 +339,7 @@ public class Tournament {
 				event.remove();
 			}
 			PlayerEvent.PLAYER_RESPAWN.unregister(this::handleRespawn);
-			TickEvent.SERVER_POST.unregister(this::tick);
+//			TickEvent.SERVER_POST.unregister(this::tick);
 			EntityEvent.LIVING_DEATH.unregister(this::livingDeath);
 			advancementHandler.unregister();
 			return;
@@ -339,7 +379,7 @@ public class Tournament {
 	}
 
 	public List<TournamentTeam> getTopTeams(int n) {
-		var sorted = getTeamManager().getTeams().stream().sorted(Comparator.comparing(t -> t.score)).toList();
+		var sorted = getTeamManager().getTeams().stream().sorted(Comparator.comparing(t -> -t.score)).toList();
 		if (sorted.size() < n)
 			return sorted;
 		return sorted.subList(0, n);

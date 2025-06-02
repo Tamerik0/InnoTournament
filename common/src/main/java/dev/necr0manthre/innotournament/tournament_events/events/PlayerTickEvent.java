@@ -8,10 +8,13 @@ import dev.necr0manthre.innotournament.tournament_events.event_data.ISourcePlaye
 import dev.necr0manthre.innotournament.tournament_events.event_data.PlayerHolder;
 import net.minecraft.server.level.ServerPlayer;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
 import java.util.function.Consumer;
 
 public class PlayerTickEvent extends ArchitecturyEventBasedTournamentEvent<TickEvent.Player, PlayerHolder> {
-	private int counter = 0;
+	private Map<UUID, Integer> counter = new HashMap<>();
 	private int period = 0;
 
 	public PlayerTickEvent(int period) {
@@ -22,8 +25,11 @@ public class PlayerTickEvent extends ArchitecturyEventBasedTournamentEvent<TickE
 	@Override
 	public TickEvent.Player getListener(Consumer<PlayerHolder> callback) {
 		return player -> {
-			if (player instanceof ServerPlayer serverPlayer && TournamentTeamManager.get(serverPlayer.server).getTeam(TournamentPlayerManager.getStatic(serverPlayer)) != null && counter++ % period == 0)
+			if (player instanceof ServerPlayer serverPlayer && TournamentTeamManager.get(serverPlayer.server).getTeam(TournamentPlayerManager.getStatic(serverPlayer)) != null && counter.computeIfAbsent(player.getUUID(), u -> 0) == 0) {
 				callback.accept(new PlayerHolder(TournamentPlayerManager.getStatic(serverPlayer)));
+			}
+			counter.put(player.getUUID(), (counter.get(player.getUUID()) + 1) % period);
+
 		};
 	}
 }

@@ -14,6 +14,8 @@ public class TournamentPlayerManager implements ServerBoundObjManager.Removable 
 	private static final ServerBoundObjManager<TournamentPlayerManager> serverToManagerMap = new ServerBoundObjManager<>();
 	private final WeakReference<MinecraftServer> serverRef;
 	Map<UUID, TournamentPlayer> players = new HashMap<>();
+	Map<String, TournamentPlayer> playersByNames = new HashMap<>();
+
 	static {
 		serverToManagerMap.register();
 	}
@@ -36,6 +38,13 @@ public class TournamentPlayerManager implements ServerBoundObjManager.Removable 
 		return players.computeIfAbsent(player.getUUID(), id -> new TournamentPlayer(player));
 	}
 
+	public TournamentPlayer get(String name) {
+		var player = getServer().getPlayerList().getPlayerByName(name);
+		if (player == null)
+			return playersByNames.computeIfAbsent(name, n -> players.computeIfAbsent(getServer().getProfileCache().get(name).get().getId(), h -> new TournamentPlayer(name, getServer())));
+		return get(player);
+	}
+
 	public static TournamentPlayer getStatic(ServerPlayer player) {
 		return TournamentPlayerManager.get(player.server).get(player);
 	}
@@ -46,12 +55,13 @@ public class TournamentPlayerManager implements ServerBoundObjManager.Removable 
 
 
 	private void leave(ServerPlayer player) {
-		get(player).player = null;
+//		get(player).player = null;
 	}
 
 	private void tick(Player xyecoc) {
 		if (xyecoc instanceof ServerPlayer player) {
 			get(player).player = player;
+			playersByNames.put(xyecoc.getScoreboardName(), get(player));
 			get(player).tick();
 		}
 	}

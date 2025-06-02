@@ -60,7 +60,8 @@ public class TournamentData implements Cloneable {
 									"preStartGameMode",
 									"preEventsPath",
 									"mainEventsPath",
-									"teamScoreModifiers")
+									"teamScoreModifiers",
+									"lastTeamScore")
 							       .map(ops::createString);
 				}
 

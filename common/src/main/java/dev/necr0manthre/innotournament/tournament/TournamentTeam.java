@@ -73,7 +73,7 @@ public class TournamentTeam {
 //	}
 
 	public List<TournamentPlayer> getPlayers() {
-		return playerTeam.getPlayers().stream().map(str -> playerManager.get(Objects.requireNonNull(playerManager.getServer().getPlayerList().getPlayerByName(str)))).toList();
+		return playerTeam.getPlayers().stream().map(playerManager::get).toList();
 	}
 
 	public void changeName(String newName) {

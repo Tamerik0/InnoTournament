@@ -46,10 +46,10 @@ public class TeamsCommand {
 						                    ctx.getSource().getServer().getScoreboard().removePlayerTeam(team.getPlayerTeam());
 					                    else {
 						                    for (var player1 : team.getPlayers()) {
-							                    player1.player.sendSystemMessage(Component.literal(player.player.getScoreboardName() + " left from your team"));
+							                    player1.getServerPlayer().ifPresent(p -> p.sendSystemMessage(Component.literal(player.getName() + " left from your team")));
 						                    }
 						                    if (oldOwner != team.owner) {
-							                    team.owner.player.sendSystemMessage(Component.literal("You are owner of team ").withStyle(ChatFormatting.GOLD).append(team.getPlayerTeam().getDisplayName()));
+							                    team.owner.getServerPlayer().ifPresent(p -> p.sendSystemMessage(Component.literal("You are owner of team ").withStyle(ChatFormatting.GOLD).append(team.getPlayerTeam().getDisplayName())));
 						                    }
 					                    }
 					                    return 1;
@@ -91,7 +91,7 @@ public class TeamsCommand {
 
 					                    ans.append(Component.literal("Members: \n").withStyle(ChatFormatting.DARK_AQUA).withStyle(ChatFormatting.BOLD));
 					                    ans.append(" ");
-					                    ans.append(player.player.getDisplayName());
+					                    ans.append(player.getDisplayName());
 					                    ans.append(Component.literal(isOwner ? " (Owner, You) " : " (You) ").withStyle(ChatFormatting.GOLD).withStyle(ChatFormatting.ITALIC));
 					                    ans.append(Component.literal("[Leave]").withStyle(ChatFormatting.RED)
 							                               .withStyle(Style.EMPTY
@@ -103,12 +103,12 @@ public class TeamsCommand {
 						                    if (player1 == player)
 							                    continue;
 						                    ans.append(" ");
-						                    ans.append(player1.player.getDisplayName());
+						                    ans.append(player1.getDisplayName());
 						                    if (isOwner) {
-							                    ans.append(Component.literal("[Kick]").withStyle(ChatFormatting.RED)
+							                    ans.append(Component.literal(" [Kick]").withStyle(ChatFormatting.RED)
 									                               .withStyle(Style.EMPTY
-											                                          .withClickEvent(new ClickEvent.RunCommand("/teams tryKick " + player1.player.getScoreboardName()))
-											                                          .withHoverEvent(new HoverEvent.ShowText(Component.literal("Click to kick ").append(player1.player.getDisplayName()).append(" from your team")))));
+											                                          .withClickEvent(new ClickEvent.RunCommand("/teams tryKick " + player1.getName()))
+											                                          .withHoverEvent(new HoverEvent.ShowText(Component.literal("Click to kick ").append(player1.getDisplayName()).append(" from your team")))));
 						                    }
 						                    if (player1 == team.owner) {
 							                    ans.append(Component.literal(" (Owner)").withStyle(ChatFormatting.GOLD).withStyle(ChatFormatting.ITALIC));
@@ -217,14 +217,19 @@ public class TeamsCommand {
 									      var teamManager = TournamentTeamManager.get(ctx.getSource().getServer());
 									      var playerManager = TournamentPlayerManager.get(ctx.getSource().getServer());
 									      var self = playerManager.get(ctx.getSource().getPlayerOrException());
+									      var huy = EntityArgument.getPlayer(ctx, "player");
+									      if (huy == self.getServerPlayer().get()) {
+										      ctx.getSource().sendFailure(Component.literal("Иди нахуй"));
+										      return 1;
+									      }
 									      var team = teamManager.getTeam(self);
 									      if (team == null) {
 										      team = teamManager.get(ctx.getSource().getServer().getScoreboard().addPlayerTeam(teamManager.createNewUnnamedTeamName()));
 										      team.addPlayer(self);
+										      team.owner = self;
 									      }
-									      var huy = EntityArgument.getPlayer(ctx, "player");
 									      playerManager.get(huy).invite(teamManager.getTeam(self), 1000);
-									      huy.sendSystemMessage(Component.literal(self.player.getScoreboardName() + " invites you to team ").append(team.getPlayerTeam().getDisplayName()).append(" ")
+									      huy.sendSystemMessage(Component.literal(self.getName() + " invites you to team ").append(team.getPlayerTeam().getDisplayName()).append(" ")
 											                            .append(Component.literal("[Принять]").withStyle(Style.EMPTY.withColor(0xFF00).withClickEvent(new ClickEvent.RunCommand("/teams join " + team.getPlayerTeam().getName()))))
 											                            .append(Component.literal("[Отклонить]").withStyle(Style.EMPTY.withColor(0xFF0000).withClickEvent(new ClickEvent.RunCommand("/teams reject " + team.getPlayerTeam().getName())))));
 									      return 1;
@@ -252,9 +257,9 @@ public class TeamsCommand {
 										      return 1;
 									      var player = TournamentPlayerManager.getStatic(EntityArgument.getPlayer(ctx, "player"));
 									      ctx.getSource().sendSuccess(() -> Component.literal("Are you sure? ")
-											                                        .append(Component.literal(" [Kick ").append(player.player.getDisplayName()).append(" ]").withStyle(ChatFormatting.RED)
-													                                                .withStyle(style -> style.withHoverEvent(new HoverEvent.ShowText(Component.literal("Click to kick ").append(player.player.getDisplayName()).append(" from your team")))
-															                                                                    .withClickEvent(new ClickEvent.RunCommand("/teams kick " + player.player.getScoreboardName())))), false);
+											                                        .append(Component.literal(" [Kick ").append(player.getDisplayName()).append(" ]").withStyle(ChatFormatting.RED)
+													                                                .withStyle(style -> style.withHoverEvent(new HoverEvent.ShowText(Component.literal("Click to kick ").append(player.getDisplayName()).append(" from your team")))
+															                                                                    .withClickEvent(new ClickEvent.RunCommand("/teams kick " + player.getName())))), false);
 									      return 1;
 								      }))));
 
@@ -294,7 +299,18 @@ public class TeamsCommand {
 
 		dispatcher.register(Commands.literal("teams")
 				                    .then(Commands.literal("kick")
-						                          .then(Commands.argument("player", EntityArgument.player())
+						                          .then(Commands.argument("player", StringArgumentType.string())
+								                                .suggests((context, builder) -> {
+									                                var team = getTeam(context);
+									                                if (team == null)
+										                                return builder.buildFuture();
+									                                var self = getPlayer(context);
+									                                for (var player : team.getPlayers()) {
+										                                if (player != self)
+											                                builder.suggest(player.getName());
+									                                }
+									                                return builder.buildFuture();
+								                                })
 								                                .executes(ctx -> {
 									                                if (!checkTeam(ctx))
 										                                return 1;
@@ -302,8 +318,8 @@ public class TeamsCommand {
 										                                return 1;
 									                                var player = TournamentPlayerManager.getStatic(EntityArgument.getPlayer(ctx, "player"));
 									                                getTeam(ctx).removePlayer(player);
-									                                player.player.sendSystemMessage(Component.literal("You was kicked from team"));
-									                                TournamentTeamManager.broadcastToTeam(Component.empty().append(player.player.getDisplayName()).append(" was kicked from team"), getTeam(ctx), playerManager(ctx));
+									                                player.getServerPlayer().ifPresent(p -> p.sendSystemMessage(Component.literal("You was kicked from team")));
+									                                TournamentTeamManager.broadcastToTeam(Component.empty().append(player.getDisplayName()).append(" was kicked from team"), getTeam(ctx), playerManager(ctx));
 									                                return 1;
 								                                }))));
 	}
@@ -314,7 +330,7 @@ public class TeamsCommand {
 
 	private static int executeAdd(CommandContext<CommandSourceStack> ctx, String team, Component displayName) throws CommandSyntaxException {
 		ServerScoreboard scoreboard = ctx.getSource().getServer().getScoreboard();
-		if (scoreboard.getPlayersTeam(team) != null) {
+		if (scoreboard.getPlayerTeam(team) != null) {
 			throw ADD_DUPLICATE_EXCEPTION.create();
 		} else {
 			PlayerTeam team2 = scoreboard.addPlayerTeam(team);
@@ -350,11 +366,11 @@ public class TeamsCommand {
 	}
 
 	private static void sendJoinPlayer(CommandContext<CommandSourceStack> ctx, TournamentPlayer player, TournamentTeam team) {
-		player.player.sendSystemMessage(Component.literal("You joined team ").append(team.getPlayerTeam().getDisplayName()));
+		player.getServerPlayer().ifPresent(p -> p.sendSystemMessage(Component.literal("You joined team ").append(team.getPlayerTeam().getDisplayName())));
 		for (var player1 : team.getPlayers()) {
 			if (player1 == player)
 				continue;
-			player1.player.sendSystemMessage(Component.empty().append(player.player.getDisplayName()).append(Component.literal(" joined your team")));
+			player1.getServerPlayer().ifPresent(p -> p.sendSystemMessage(Component.empty().append(player.getDisplayName()).append(Component.literal(" joined your team"))));
 		}
 	}
 
