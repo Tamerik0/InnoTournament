@@ -34,11 +34,12 @@ public class ServerBoundObjManager<T> extends WeakHashMap<MinecraftServer, T> {
 	public void serverTick(MinecraftServer server){
 		processQueue();
 	}
+	TickEvent.Server serverTick = this::serverTick;
 	public void register(){
-		TickEvent.SERVER_POST.register(this::serverTick);
+		TickEvent.SERVER_POST.register(serverTick);
 	}
 	public void unregister(){
-		TickEvent.SERVER_POST.unregister(this::serverTick);
+		TickEvent.SERVER_POST.unregister(serverTick);
 	}
 
 	public interface Removable {

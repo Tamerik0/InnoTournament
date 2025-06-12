@@ -20,11 +20,11 @@ public class SidebarManager {
 	private final Map<UUID, SuppliedSidebar> sidebars = new HashMap<>();
 	@Setter
 	private Function<ServerPlayer, SuppliedSidebarData> sidebarFactory;
-
+PlayerEvent.PlayerJoin onPlayerJoin = this::onPlayerJoin;
 	public SidebarManager(MinecraftServer server, Function<ServerPlayer, SuppliedSidebarData> sidebarFactory) {
 		this.server = server;
 		this.sidebarFactory = sidebarFactory;
-		PlayerEvent.PLAYER_JOIN.register(this::onPlayerJoin);
+		PlayerEvent.PLAYER_JOIN.register(onPlayerJoin);
 		for (var player : server.getPlayerList().getPlayers())
 			onPlayerJoin(player);
 	}
@@ -101,7 +101,7 @@ public class SidebarManager {
 			for (var player : sidebar.getPlayerHandlerSet())
 				sidebar.removePlayer(player);
 		}
-		PlayerEvent.PLAYER_JOIN.unregister(this::onPlayerJoin);
+		PlayerEvent.PLAYER_JOIN.unregister(onPlayerJoin);
 	}
 
 	public record SuppliedSidebarData(Sidebar.Priority priority, int updateRate,

@@ -18,17 +18,19 @@ public class TimeEvent extends AbstractTournamentEvent<Object> {
 		this.time = time;
 	}
 
+	TickEvent.Server tick = this::tick;
+
 	@Override
 	protected void subscribe(Tournament tournament, Consumer<Object> callback) {
 		this.tournament = tournament;
 		this.callback = callback;
 		completed = false;
-		TickEvent.SERVER_PRE.register(this::tick);
+		TickEvent.SERVER_PRE.register(tick);
 	}
 
 	@Override
 	public void remove() {
-		TickEvent.SERVER_PRE.unregister(this::tick);
+		TickEvent.SERVER_PRE.unregister(tick);
 	}
 
 	private void tick(MinecraftServer server) {

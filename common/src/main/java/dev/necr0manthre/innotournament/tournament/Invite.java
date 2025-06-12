@@ -6,11 +6,11 @@ public class Invite {
 	@Getter
 	private final TournamentPlayer player;
 	@Getter
-	private final TournamentTeam team;
+	private final TournamentTeamManager.TournamentTeam team;
 	@Getter
 	private int lifetime;
 
-	public Invite(TournamentPlayer player, TournamentTeam team, int lifetime) {
+	public Invite(TournamentPlayer player, TournamentTeamManager.TournamentTeam team, int lifetime) {
 		this.player = player;
 		this.team = team;
 		this.lifetime = lifetime;

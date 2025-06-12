@@ -20,10 +20,13 @@ public class TournamentPlayerManager implements ServerBoundObjManager.Removable 
 		serverToManagerMap.register();
 	}
 
+	PlayerEvent.PlayerQuit leave = this::leave;
+	TickEvent.Player tick = this::tick;
+
 	private TournamentPlayerManager(MinecraftServer server) {
 		this.serverRef = new WeakReference<>(server);
-		PlayerEvent.PLAYER_QUIT.register(this::leave);
-		TickEvent.PLAYER_POST.register(this::tick);
+		PlayerEvent.PLAYER_QUIT.register(leave);
+		TickEvent.PLAYER_POST.register(tick);
 	}
 
 	public static TournamentPlayerManager get(MinecraftServer server) {
@@ -68,7 +71,7 @@ public class TournamentPlayerManager implements ServerBoundObjManager.Removable 
 
 	@Override
 	public void onRemove() {
-		PlayerEvent.PLAYER_QUIT.unregister(this::leave);
-		TickEvent.PLAYER_POST.unregister(this::tick);
+		PlayerEvent.PLAYER_QUIT.unregister(leave);
+		TickEvent.PLAYER_POST.unregister(tick);
 	}
 }

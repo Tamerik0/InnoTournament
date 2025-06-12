@@ -3,7 +3,6 @@ package dev.necr0manthre.innotournament.tournament;
 import net.minecraft.network.chat.ClickEvent;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.HoverEvent;
-import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.EntityType;
@@ -45,7 +44,7 @@ public class TournamentPlayer {
 		invites.removeIf(Invite::tick);
 	}
 
-	public void invite(TournamentTeam team, int inviteTime) {
+	public void invite(TournamentTeamManager.TournamentTeam team, int inviteTime) {
 		invites.add(new Invite(this, team, inviteTime));
 	}
 

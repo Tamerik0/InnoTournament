@@ -10,6 +10,7 @@ import dev.necr0manthre.innotournament.tournament_events.event_data.PlayerHolder
 import dev.necr0manthre.innotournament.tournament_events.event_data.PlayerKilled;
 import dev.necr0manthre.innotournament.tournament_events.events.AchievementEvent;
 import dev.necr0manthre.innotournament.tournament_events.events.PlayerTickEvent;
+import dev.necr0manthre.innotournament.tournament_events.events.TeamAchievementEvent;
 import dev.necr0manthre.innotournament.tournament_events.events.TimeEvent;
 import dev.necr0manthre.innotournament.tournament_events.parsing.IParser;
 import dev.necr0manthre.innotournament.tournament_events.parsing.TournamentEventParserRegistry;
@@ -25,7 +26,8 @@ public interface InnoTournamentEvents {
 	IParser<String, AbstractTournamentEvent<?>> PREPARE = register(new SimpleDecoder<>("onPrepare", () -> new LambdaTournamentEvent<Object, Consumer<Object>>((tournament, callback, additionalData) -> tournament.onPrepare.register(callback), (tournament, callback, data) -> tournament.onStart.unregister(callback))));
 	IParser<String, AbstractTournamentEvent<?>> START = register(new SimpleDecoder<>("onStart", () -> new LambdaTournamentEvent<Object, Consumer<Object>>((tournament, callback, additionalData) -> tournament.onStart.register(callback), (tournament, callback, data) -> tournament.onStart.unregister(callback))));
 	IParser<String, AbstractTournamentEvent<?>> END = register(new SimpleDecoder<>("onEnd", () -> new LambdaTournamentEvent<Object, Consumer<Object>>((tournament, callback, additionalData) -> tournament.onEnd.register(callback), (tournament, callback, data) -> tournament.onStart.unregister(callback))));
-	IParser<String, AbstractTournamentEvent<?>> ACHIEVEMENT = register(new OneArgumentParser<>("achievement", AchievementEvent::new));
+	IParser<String, AbstractTournamentEvent<?>> ACHIEVEMENT = register(new OneArgumentParser<>("advancement", AchievementEvent::new));
+	IParser<String, AbstractTournamentEvent<?>> TEAM_ACHIEVEMENT = register(new OneArgumentParser<>("teamAdvancement", TeamAchievementEvent::new));
 	IParser<String, AbstractTournamentEvent<?>> PLAYER_KILLED = register(new SimpleDecoder<>("playerKilled", () -> new LambdaTournamentEvent<PlayerKilled, EntityEvent.LivingDeath>((tournament, callback, additionalData) -> {
 		additionalData.set((entity, damageSource) -> {
 			if (entity instanceof ServerPlayer target && damageSource.getEntity() instanceof ServerPlayer source) {

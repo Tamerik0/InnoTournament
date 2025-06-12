@@ -4,36 +4,35 @@ import dev.architectury.event.events.common.PlayerEvent;
 import dev.necr0manthre.innotournament.tournament.Tournament;
 import dev.necr0manthre.innotournament.tournament.TournamentPlayerManager;
 import dev.necr0manthre.innotournament.tournament_events.AbstractTournamentEvent;
-import dev.necr0manthre.innotournament.tournament_events.event_data.ISourcePlayerProvider;
+import dev.necr0manthre.innotournament.tournament_events.event_data.PlayerHolder;
 import net.minecraft.advancements.AdvancementHolder;
 import net.minecraft.server.level.ServerPlayer;
 
 import java.util.function.Consumer;
 
-public class AchievementEvent extends AbstractTournamentEvent<ISourcePlayerProvider> {
+public class AchievementEvent extends AbstractTournamentEvent<PlayerHolder> {
 	private final String achievement;
-	private Tournament tournament;
-	private Consumer<ISourcePlayerProvider> callback;
+	private Consumer<PlayerHolder> callback;
 
 	public AchievementEvent(String achievement) {
 		this.achievement = achievement;
 	}
 
 	@Override
-	protected void subscribe(Tournament tournament, Consumer<ISourcePlayerProvider> callback) {
-		this.tournament = tournament;
+	protected void subscribe(Tournament tournament, Consumer<PlayerHolder> callback) {
 		this.callback = callback;
-		PlayerEvent.PLAYER_ADVANCEMENT.register(this::handler);
+		PlayerEvent.PLAYER_ADVANCEMENT.register(handler);
 	}
 
 	@Override
 	public void remove() {
-		PlayerEvent.PLAYER_ADVANCEMENT.unregister(this::handler);
+		PlayerEvent.PLAYER_ADVANCEMENT.unregister(handler);
 	}
 
+	PlayerEvent.PlayerAdvancement handler = this::handler;
 	public void handler(ServerPlayer player, AdvancementHolder advancement) {
 		if (advancement.id().toString().equals(achievement)) {
-			callback.accept(() -> TournamentPlayerManager.getStatic(player));
+			callback.accept(new PlayerHolder(TournamentPlayerManager.getStatic(player)));
 		}
 	}
 }

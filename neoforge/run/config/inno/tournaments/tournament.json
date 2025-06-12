@@ -1,0 +1,33 @@
+{
+  "tournamentPreSpawn": [
+    -805,
+    83,
+    236
+  ],
+  "tournamentPreSpawnDimension": "minecraft:overworld",
+  "tournamentSpawn": [
+    -801,
+    63,
+    225
+  ],
+  "tournamentSpawnDimension": "minecraft:overworld",
+  "startBoxStructureResourceLocation": "minecraft:start",
+  "startBoxPos": [
+    -815,
+    82,
+    226
+  ],
+  "preStartGameMode": "survival",
+  "preEventsPath": "preEvents.json",
+  "mainEventsPath": "mainEvents.json",
+  "teamScoreModifiers": [
+    0.0,
+    2.43,
+    1.45,
+    1.0,
+    0.724117,
+    0.4530344,
+    0.3645
+  ],
+  "lastTeamScore": 100000.0
+}

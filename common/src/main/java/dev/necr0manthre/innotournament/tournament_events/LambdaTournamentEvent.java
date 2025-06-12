@@ -13,6 +13,7 @@ public class LambdaTournamentEvent<T, V> extends AbstractTournamentEvent<T> {
 	private final TriConsumer<Tournament, Consumer<T>, V> removeAction;
 	private Tournament tournament;
 	private Consumer<T> callback;
+	private boolean subscribed = false;
 
 	public LambdaTournamentEvent(TriConsumer<Tournament, Consumer<T>, AtomicReference<V>> subscribeAction, TriConsumer<Tournament, Consumer<T>, V> removeAction) {
 		this.subscribeAction = subscribeAction;
@@ -24,10 +25,13 @@ public class LambdaTournamentEvent<T, V> extends AbstractTournamentEvent<T> {
 		this.tournament = tournament;
 		this.callback = callback;
 		subscribeAction.accept(tournament, callback, reference);
+		subscribed = true;
 	}
 
 	@Override
 	public void remove() {
-		removeAction.accept(tournament, callback, reference.get());
+		if (subscribed)
+			removeAction.accept(tournament, callback, reference.get());
+		subscribed = false;
 	}
 }

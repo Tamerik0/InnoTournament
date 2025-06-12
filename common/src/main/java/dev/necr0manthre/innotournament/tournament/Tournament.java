@@ -9,6 +9,7 @@ import dev.architectury.event.events.common.TickEvent;
 import dev.necr0manthre.innotournament.sidebar.SidebarManager;
 import dev.necr0manthre.innotournament.tournament_events.AbstractTournamentEvent;
 import dev.necr0manthre.innotournament.tournament_events.ITournamentEventListener;
+import dev.necr0manthre.innotournament.util.ServerScheduler;
 import eu.pb4.sidebars.api.Sidebar;
 import eu.pb4.sidebars.api.SidebarInterface;
 import eu.pb4.sidebars.api.lines.ImmutableSidebarLine;
@@ -19,15 +20,15 @@ import net.minecraft.network.chat.ClickEvent;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.HoverEvent;
 import net.minecraft.network.chat.numbers.BlankFormat;
-import net.minecraft.network.chat.numbers.NumberFormat;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
@@ -87,7 +88,8 @@ public class Tournament {
 	public static void setTournament(MinecraftServer server, Tournament tournament) {
 		if (get(server) != null) try {
 			get(server).remove();
-		} catch (Exception ignore) {
+		} catch (Exception e) {
+			throw new RuntimeException("Exception while tournament", e);
 		}
 		serverToManagerMap.put(server, tournament);
 	}
@@ -106,6 +108,7 @@ public class Tournament {
 	}
 
 	public void remove() {
+		System.out.println(this + " is being removed");
 		onRemove.invoker().accept(null);
 		serverToManagerMap.remove(getServer());
 		for (var event : preStartEvents.keySet()) {
@@ -115,12 +118,13 @@ public class Tournament {
 			event.remove();
 		}
 		sidebarManager.remove();
-		PlayerEvent.PLAYER_RESPAWN.unregister(this::handlePreStartRespawn);
-		PlayerEvent.PLAYER_RESPAWN.unregister(this::handleRespawn);
-		TickEvent.SERVER_POST.unregister(this::tick);
-		TickEvent.SERVER_POST.unregister(this::prepareTick);
-		EntityEvent.LIVING_DEATH.unregister(this::livingDeath);
+		PlayerEvent.PLAYER_RESPAWN.unregister(handlePreStartRespawn);
+		PlayerEvent.PLAYER_RESPAWN.unregister(handleRespawn);
+		TickEvent.SERVER_POST.unregister(tick);
+		TickEvent.SERVER_POST.unregister(prepareTick);
+		EntityEvent.LIVING_DEATH.unregister(livingDeath);
 		advancementHandler.unregister();
+		System.out.println(this + " is removed");
 	}
 
 	public void placeStartBox() {
@@ -136,6 +140,8 @@ public class Tournament {
 	}
 
 	private void handlePreStartRespawn(ServerPlayer player, boolean huy, Entity.RemovalReason removalReason) {
+		System.out.println("hello from " + this);
+
 		player.setRespawnPosition(new ServerPlayer.RespawnConfig(tournamentPreSpawnDimension, tournamentPreSpawn, 0, true), false);
 		player.teleport(new TeleportTransition(getServer().getLevel(tournamentPreSpawnDimension), tournamentPreSpawn.getCenter(), Vec3.ZERO, 0, 0, entity -> {
 		}));
@@ -162,8 +168,9 @@ public class Tournament {
 
 		} else if (phase == 2) {
 			var tournamentPlayer = TournamentPlayerManager.get(getServer()).get(player);
-			if (tournamentPlayer.tournament != null && tournamentPlayer.tournament.get() == this) return;
+
 			if (getTeamManager().getTeam(tournamentPlayer) == null) {
+				tournamentPlayer.tournament = null;
 				tournamentPlayer.player.setGameMode(GameType.SPECTATOR);
 				var lastWarning = lastWarningTicks.computeIfAbsent(tournamentPlayer.player.getUUID(), u -> 0);
 				if (getServer().getTickCount() - lastWarning > 1000) {
@@ -183,9 +190,14 @@ public class Tournament {
 													                            .withClickEvent(new ClickEvent.RunCommand("/tournament help"))))
 									.append(" .(It's really important)"));
 				}
+				return;
 			}
-			tournamentPlayer.tournament = new WeakReference<>(this);
-			tournamentPlayer.lives = 3;
+			if (tournamentPlayer.lives == 0) {
+				tournamentPlayer.player.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, 3));
+			}
+			if (tournamentPlayer.tournament == null || tournamentPlayer.tournament.get() != this) {
+				setupPlayer(tournamentPlayer);
+			}
 		}
 	}
 
@@ -195,20 +207,27 @@ public class Tournament {
 		}
 	}
 
+	TickEvent.Server prepareTick = this::prepareTick;
+	PlayerEvent.PlayerRespawn handlePreStartRespawn = this::handlePreStartRespawn;
+	EntityEvent.LivingDeath livingDeath = this::livingDeath;
+	PlayerEvent.PlayerRespawn handleRespawn = this::handleRespawn;
+	TickEvent.Server tick = this::tick;
+
 	public void prepare(MinecraftServer server) {
 		if (phase == 1) throw new IllegalStateException("Tournament is already prepared");
 		if (phase == 2) throw new IllegalStateException("Tournament is already started");
 		if (phase == 3) throw new IllegalStateException("Tournament is already ended");
 		if (phase > 3) throw new IllegalStateException("WTF with tournament phase");
 		serverRef = new WeakReference<>(server);
-		TickEvent.SERVER_POST.register(this::prepareTick);
+		TickEvent.SERVER_POST.register(prepareTick);
 		this.sidebarManager = new SidebarManager(server, player -> new SidebarManager.SuppliedSidebarData(Sidebar.Priority.OVERRIDE, 400, () -> {
 			var title = Component.literal("Innotournament v2!!!");
 			var team = TournamentTeamManager.get(getServer()).get(player.getTeam());
 			var teamName = team == null ? "No team" : team.getPlayerTeam().getName();
+			var teamDisplayName = team == null ? null : team.getPlayerTeam().getDisplayName();
 			List<ImmutableSidebarLine> lines = new ArrayList<>();
 			int i = 0;
-			lines.add(new ImmutableSidebarLine(i--, Component.literal(teamName), BlankFormat.INSTANCE));
+			lines.add(new ImmutableSidebarLine(i--, teamDisplayName == null ? Component.literal(teamName) : Component.empty().append(teamDisplayName).append(" (").append(Component.literal(teamName)).append(")"), BlankFormat.INSTANCE));
 			if (team != null) {
 				lines.add(new ImmutableSidebarLine(i--, Component.literal("Score: " + team.score), BlankFormat.INSTANCE));
 				for (var tournamentPlayer : team.getPlayers()) {
@@ -221,7 +240,10 @@ public class Tournament {
 			var top = getTopTeams(getTeamManager().getTeams().size());
 			var index = top.indexOf(team);
 			for (int j = 0; j < Math.min(5, top5.size()); j++) {
-				lines.add(new ImmutableSidebarLine(i--, Component.literal("[" + (j + 1) + "] ").append(top5.get(j).getPlayerTeam().getDisplayName()).append(" (" + top5.get(j).score + ")"), BlankFormat.INSTANCE));
+				if (top5.get(j) == team)
+					lines.add(new ImmutableSidebarLine(i--, Component.literal("[" + (index + 1) + "] ").append(team.getPlayerTeam().getDisplayName()).append(" (You) ").append("(" + team.score + ")"), BlankFormat.INSTANCE));
+				else
+					lines.add(new ImmutableSidebarLine(i--, Component.literal("[" + (j + 1) + "] ").append(top5.get(j).getPlayerTeam().getDisplayName()).append(" (" + top5.get(j).score + ")"), BlankFormat.INSTANCE));
 			}
 			if (top5.size() >= 5) {
 				if (index >= 5) {
@@ -237,9 +259,9 @@ public class Tournament {
 		}));
 		server.getLevel(tournamentPreSpawnDimension).setDefaultSpawnPos(tournamentPreSpawn, 0);
 		server.getLevel(tournamentPreSpawnDimension).getWorldBorder().setCenter(tournamentPreSpawn.getX(), tournamentPreSpawn.getZ());
-		PlayerEvent.PLAYER_RESPAWN.register(this::handlePreStartRespawn);
-		PlayerEvent.PLAYER_JOIN.register(this::checkPlayer);
-		EntityEvent.LIVING_DEATH.register(this::livingDeath);
+		PlayerEvent.PLAYER_RESPAWN.register(handlePreStartRespawn);
+//		PlayerEvent.PLAYER_JOIN.register(checkPlayer);
+		EntityEvent.LIVING_DEATH.register(livingDeath);
 		phase = 1;
 		for (var event : preStartEvents.keySet()) {
 			event.subscribe(this);
@@ -265,9 +287,9 @@ public class Tournament {
 			event.remove();
 		}
 		phase = 2;
-		PlayerEvent.PLAYER_RESPAWN.unregister(this::handlePreStartRespawn);
-		PlayerEvent.PLAYER_RESPAWN.register(this::handleRespawn);
-		TickEvent.SERVER_POST.register(this::tick);
+		PlayerEvent.PLAYER_RESPAWN.unregister(handlePreStartRespawn);
+		PlayerEvent.PLAYER_RESPAWN.register(handleRespawn);
+		TickEvent.SERVER_POST.register(tick);
 		startTime = getServer().overworld().getGameTime();
 		if (tournamentSpawnDimension.equals(Level.OVERWORLD)) {
 			getServer().overworld().getWorldBorder().setCenter(tournamentSpawn.getX(), tournamentSpawn.getZ());
@@ -283,18 +305,33 @@ public class Tournament {
 			getServer().getLevel(Level.END).getWorldBorder().setCenter(tournamentSpawn.getX() / 8, tournamentSpawn.getZ() / 8);
 		}
 		getServer().getLevel(tournamentSpawnDimension).setDefaultSpawnPos(tournamentSpawn, 0);
-		getServer().setPvpAllowed(true);
-		for (var player : getServer().getPlayerList().getPlayers()) {
-			player.teleport(new TeleportTransition(getServer().getLevel(tournamentSpawnDimension), tournamentSpawn.getCenter(), Vec3.ZERO, 0, 0, entity -> {
-			}));
-			player.setGameMode(GameType.ADVENTURE);
-		}
+
 		for (var team : TournamentTeamManager.get(getServer()).getTeams()) {
-			team.score = 0;
+			setupTeam(team);
 			team.acceptAll = false;
 		}
 		onStart.invoker().accept(null);
 		checkAllPlayers();
+		checkAllTeams();
+	}
+
+	public void checkAllTeams() {
+		for (var team : getTeamManager().getTeams())
+			checkTeam(team);
+	}
+
+	public void checkTeam(TournamentTeamManager.TournamentTeam team) {
+		if (phase != 2)
+			return;
+		if (team.tournament == null || team.tournament.get() != this) {
+			setupTeam(team);
+		}
+		if (team.owner == null || !team.getPlayers().contains(team.owner)) {
+			if (team.getPlayers().isEmpty())
+				getServer().getScoreboard().removePlayerTeam(team.getPlayerTeam());
+			else
+				team.owner = team.getPlayers().getFirst();
+		}
 	}
 
 	private void prepareTick(MinecraftServer server) {
@@ -304,12 +341,12 @@ public class Tournament {
 	private void tick(MinecraftServer server) {
 		if (phase != 2)
 			return;
-		TournamentTeam t = null;
+		TournamentTeamManager.TournamentTeam t = null;
 		boolean end = true;
 		for (var team : getTeamManager().getTeams()) {
 			boolean alive = false;
 			for (var player : team.getPlayers()) {
-				if (!player.player.hasDisconnected() && player.lives != 0) {
+				if (player.player != null && !player.player.hasDisconnected() && player.lives != 0) {
 					alive = true;
 					break;
 				}
@@ -335,16 +372,32 @@ public class Tournament {
 			}
 			onEnd.invoker().accept(null);
 			phase = 3;
+
 			for (var event : mainEvents.keySet()) {
-				event.remove();
+				ServerScheduler.scheduleServerPre(0, () -> {
+					try {
+						event.remove();
+					} catch (Exception ignored) {
+					}
+				});
+//				ServerScheduler.scheduleServerPost(0, () -> {
+//					try {
+//						event.remove();
+//					} catch (Exception ignored) {
+//					}
+//				});
 			}
-			PlayerEvent.PLAYER_RESPAWN.unregister(this::handleRespawn);
-//			TickEvent.SERVER_POST.unregister(this::tick);
-			EntityEvent.LIVING_DEATH.unregister(this::livingDeath);
-			advancementHandler.unregister();
+
+			ServerScheduler.scheduleServerPre(0, () -> {
+				PlayerEvent.PLAYER_RESPAWN.unregister(handleRespawn);
+				TickEvent.SERVER_POST.unregister(tick);
+				EntityEvent.LIVING_DEATH.unregister(livingDeath);
+				advancementHandler.unregister();
+			});
 			return;
 		}
 		checkAllPlayers();
+		checkAllTeams();
 	}
 
 
@@ -366,10 +419,33 @@ public class Tournament {
 			var tournamentPlayer = getPlayerManager().get(player);
 			if (tournamentPlayer.lives > 0) {
 				tournamentPlayer.lives--;
+				updateSidebars();
 				if (tournamentPlayer.lives == 0) playerRunOutOfLives.invoker().accept(tournamentPlayer);
 			}
 		}
 		return EventResult.pass();
+	}
+
+	public void setupPlayer(TournamentPlayer player) {
+		player.tournament = new WeakReference<>(this);
+		player.lives = 3;
+		player.player.heal(100);
+		for (var adv : getServer().getAdvancements().getAllAdvancements())
+			for (var huy : player.player.getAdvancements().getOrStartProgress(adv).getCompletedCriteria())
+				player.player.getAdvancements().revoke(adv, huy);
+		player.player.getInventory().clearContent();
+		player.player.getFoodData().setFoodLevel(100);
+		player.player.getFoodData().setSaturation(1);
+		player.player.teleport(new TeleportTransition(getServer().getLevel(tournamentSpawnDimension), tournamentSpawn.getCenter(), Vec3.ZERO, 0, 0, entity -> {
+		}));
+		player.player.setGameMode(GameType.SURVIVAL);
+		player.tournament = new WeakReference<>(this);
+	}
+
+	public void setupTeam(TournamentTeamManager.TournamentTeam team) {
+		team.score = 0;
+		team.clearAdvancements();
+		team.tournament = new WeakReference<>(this);
 	}
 
 	public void addScores(TournamentPlayer player, double score) {
@@ -378,14 +454,21 @@ public class Tournament {
 		updateSidebars();
 	}
 
-	public List<TournamentTeam> getTopTeams(int n) {
+	public void addScores(TournamentTeamManager.TournamentTeam team, double score) {
+		team.score += score * teamScoreModifiers[team.getPlayers().size()];
+		updateSidebars();
+	}
+
+	public List<TournamentTeamManager.TournamentTeam> getTopTeams(int n) {
 		var sorted = getTeamManager().getTeams().stream().sorted(Comparator.comparing(t -> -t.score)).toList();
 		if (sorted.size() < n)
 			return sorted;
 		return sorted.subList(0, n);
 	}
 
-	public void addPlayerToTeam(TournamentPlayer player, TournamentTeam team) {
+	public void addPlayerToTeam(TournamentPlayer player, TournamentTeamManager.TournamentTeam team) {
+		if (getTeamManager().getTeam(player) != null)
+			getTeamManager().getTeam(player).removePlayer(player);
 		var coeff = teamScoreModifiers[team.getPlayers().size()];
 		team.addPlayer(player);
 		team.score *= teamScoreModifiers[team.getPlayers().size()] / coeff;

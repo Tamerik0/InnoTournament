@@ -1,0 +1,3 @@
+{
+  "onPrepare": ["place_start_box", "world_border 100", "pvp false"]
+}

@@ -30,6 +30,10 @@ public class TournamentCommand {
 	private static Path selectedTournamentPath;
 
 	public static void register(CommandDispatcher<CommandSourceStack> dispatcher, CommandBuildContext registryAccess, Commands.CommandSelection environment) {
+		dispatcher.register(Commands.literal("tournament").then(Commands.literal("help").executes(ctx -> {
+			ctx.getSource().sendSuccess(() -> Component.literal("Help"), false);
+			return 1;
+		})));
 		dispatcher.register(Commands.literal("tournament")
 				                    .then(Commands.literal("select")
 						                          .then(Commands.argument("filePath", StringArgumentType.string())

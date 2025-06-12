@@ -1,6 +1,5 @@
 package dev.necr0manthre.innotournament.commands;
 
-import com.mojang.brigadier.Command;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.BoolArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
@@ -162,10 +161,16 @@ public class TeamsCommand {
 							                          var tournament = Tournament.get(ctx.getSource().getServer());
 							                          if (tournament == null)
 								                          team.addPlayer(player);
-							                          else
+							                          else {
+														  if(teamManager(ctx).getTeam(player)!=null){
+															  ctx.getSource().sendFailure(Component.literal("Firstly leave from your current team"));
+															  return 1;
+														  }
 								                          tournament.addPlayerToTeam(player, team);
+							                          }
 							                          player.invites.clear();
 							                          sendJoinPlayer(ctx, player, team);
+							                          updateSidebars(ctx);
 							                          return 1;
 						                          })))));
 		dispatcher.register(Commands.literal("teams")
@@ -273,6 +278,7 @@ public class TeamsCommand {
 											                                      if (!checkOwner(ctx))
 												                                      return 1;
 											                                      getTeam(ctx).changeName(StringArgumentType.getString(ctx, "name"));
+											                                      updateSidebars(ctx);
 											                                      return 1;
 										                                      })))
 						                          .then(Commands.literal("displayName")
@@ -283,6 +289,7 @@ public class TeamsCommand {
 											                                      if (!checkOwner(ctx))
 												                                      return 1;
 											                                      getTeam(ctx).getPlayerTeam().setDisplayName(ComponentArgument.getResolvedComponent(ctx, "displayName"));
+											                                      updateSidebars(ctx);
 											                                      return 1;
 										                                      })))));
 		dispatcher.register(Commands.literal("teams")
@@ -316,11 +323,12 @@ public class TeamsCommand {
 										                                return 1;
 									                                if (!checkOwner(ctx))
 										                                return 1;
-									                                var player = TournamentPlayerManager.getStatic(EntityArgument.getPlayer(ctx, "player"));
+									                                var player = playerManager(ctx).get(StringArgumentType.getString(ctx, "player"));
 									                                getTeam(ctx).removePlayer(player);
 									                                player.getServerPlayer().ifPresent(p -> p.sendSystemMessage(Component.literal("You was kicked from team")));
 									                                TournamentTeamManager.broadcastToTeam(Component.empty().append(player.getDisplayName()).append(" was kicked from team"), getTeam(ctx), playerManager(ctx));
-									                                return 1;
+									                                updateSidebars(ctx);
+																	return 1;
 								                                }))));
 	}
 
@@ -365,7 +373,7 @@ public class TeamsCommand {
 		return collection.size();
 	}
 
-	private static void sendJoinPlayer(CommandContext<CommandSourceStack> ctx, TournamentPlayer player, TournamentTeam team) {
+	private static void sendJoinPlayer(CommandContext<CommandSourceStack> ctx, TournamentPlayer player, TournamentTeamManager.TournamentTeam team) {
 		player.getServerPlayer().ifPresent(p -> p.sendSystemMessage(Component.literal("You joined team ").append(team.getPlayerTeam().getDisplayName())));
 		for (var player1 : team.getPlayers()) {
 			if (player1 == player)
@@ -393,7 +401,13 @@ public class TeamsCommand {
 		return playerManager(ctx).get(ctx.getSource().getPlayer());
 	}
 
-	private static TournamentTeam getTeam(CommandContext<CommandSourceStack> ctx) {
+	private static TournamentTeamManager.TournamentTeam getTeam(CommandContext<CommandSourceStack> ctx) {
 		return teamManager(ctx).getTeam(getPlayer(ctx));
+	}
+
+	private static void updateSidebars(CommandContext<CommandSourceStack> ctx) {
+		var tournament = Tournament.get(ctx.getSource().getServer());
+		if (tournament != null)
+			tournament.updateSidebars();
 	}
 }

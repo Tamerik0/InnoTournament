@@ -8,6 +8,8 @@ import dev.necr0manthre.innotournament.commands.TeamsCommand;
 import dev.necr0manthre.innotournament.commands.TournamentCommand;
 import dev.necr0manthre.innotournament.events.EndServerReloadEvent;
 import dev.necr0manthre.innotournament.init.*;
+import dev.necr0manthre.innotournament.util.ClientScheduler;
+import dev.necr0manthre.innotournament.util.ServerScheduler;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
@@ -34,13 +36,15 @@ public class Innotournament {
 		InnoBlocks.NETHER_GENERATOR_BLOCK.Init(server.registryAccess());
 	}
 
+	LifecycleEvent.ServerState init = this::init;
+
 	public void onInitialize() {
 		InnoTournamentEvents.init();
 		InnoTournamentEventHandlers.init();
 		registerContent(Registries.BLOCK, InnoBlocks::initialize);
 		registerContent(Registries.ITEM, InnoItems::initialize);
 		registerContent(Registries.BLOCK_ENTITY_TYPE, InnoBlockEntities::initialize);
-		EndServerReloadEvent.EVENT.register(this::init);
+		EndServerReloadEvent.EVENT.register(init);
 		LifecycleEvent.SERVER_LEVEL_LOAD.register(level -> {
 			if (level == level.getServer().overworld())
 				init(level.getServer());
@@ -49,5 +53,6 @@ public class Innotournament {
 			TeamsCommand.register(dispatcher, registryAccess, environment);
 			TournamentCommand.register(dispatcher, registryAccess, environment);
 		});
+		ServerScheduler.init();
 	}
 }

@@ -1,7 +1,7 @@
 package dev.necr0manthre.innotournament.tournament_events.event_data;
 
 import dev.necr0manthre.innotournament.tournament.TournamentPlayer;
-import dev.necr0manthre.innotournament.tournament.TournamentTeam;
+import dev.necr0manthre.innotournament.tournament.TournamentTeamManager;
 import lombok.Data;
 
 @Data
@@ -19,7 +19,7 @@ public class PlayerHolder implements ISourcePlayerProvider, ITargetPlayerProvide
 	}
 
 	@Override
-	public TournamentTeam getTeam() {
+	public TournamentTeamManager.TournamentTeam getTeam() {
 		return player.tournament.get().getTeamManager().getTeam(player);
 	}
 }

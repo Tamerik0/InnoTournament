@@ -1,7 +1,7 @@
 package dev.necr0manthre.innotournament.tournament_events.event_data;
 
-import dev.necr0manthre.innotournament.tournament.TournamentTeam;
+import dev.necr0manthre.innotournament.tournament.TournamentTeamManager;
 
 public interface ITeamProvider {
-	TournamentTeam getTeam();
+	TournamentTeamManager.TournamentTeam getTeam();
 }

@@ -1,0 +1,16 @@
+{
+  "time 10": "log huy",
+  "time 300": "world_border 10 10000",
+  "time 700": "world_border 1000 10000",
+  "time 500": "pvp true",
+  "onStart": [
+    "remove_start_box",
+    "execute_command say Tournament started!!!",
+    "world_border 20",
+    "execute_command time set day"
+  ],
+  "playerKilled": "add_score 10000",
+  "teamAdvancement minecraft:end/kill_dragon": "add_score 100000",
+  "teamAdvancement minecraft:end/elytra": "add_score 100000",
+  "playerTick 200": "add_score_by_lives 0 10 20 40"
+}

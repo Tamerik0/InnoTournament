@@ -25,10 +25,11 @@ public class PlayerTickEvent extends ArchitecturyEventBasedTournamentEvent<TickE
 	@Override
 	public TickEvent.Player getListener(Consumer<PlayerHolder> callback) {
 		return player -> {
-			if (player instanceof ServerPlayer serverPlayer && TournamentTeamManager.get(serverPlayer.server).getTeam(TournamentPlayerManager.getStatic(serverPlayer)) != null && counter.computeIfAbsent(player.getUUID(), u -> 0) == 0) {
+			if (player instanceof ServerPlayer serverPlayer && TournamentTeamManager.get(serverPlayer.server).getTeam(TournamentPlayerManager.getStatic(serverPlayer)) != null && counter.computeIfAbsent(player.getUUID(), u -> 0
+			) == 0) {
 				callback.accept(new PlayerHolder(TournamentPlayerManager.getStatic(serverPlayer)));
 			}
-			counter.put(player.getUUID(), (counter.get(player.getUUID()) + 1) % period);
+			counter.put(player.getUUID(), (counter.getOrDefault(player.getUUID(), 0) + 1) % period);
 
 		};
 	}
