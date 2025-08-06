@@ -1,16 +1,153 @@
 {
-  "time 10": "log huy",
-  "time 300": "world_border 10 10000",
-  "time 700": "world_border 1000 10000",
-  "time 500": "pvp true",
-  "onStart": [
-    "remove_start_box",
-    "execute_command say Tournament started!!!",
-    "world_border 20",
-    "execute_command time set day"
-  ],
-  "playerKilled": "add_score 10000",
-  "teamAdvancement minecraft:end/kill_dragon": "add_score 100000",
-  "teamAdvancement minecraft:end/elytra": "add_score 100000",
-  "playerTick 200": "add_score_by_lives 0 10 20 40"
+    "time 10": "log hi",
+    "time 300": "world_border 100 300000",
+    "time 700": "world_border 10 200000",
+    "time 500": "pvp true",
+    "onStart": [
+        "remove_start_box",
+        "execute_command say Tournament started!!!",
+        "world_border 400",
+        "execute_command time set day"
+    ],
+    //достижения простые(50 очков каждое)
+    "teamAdvancement minecraft:story/root": "add_score 50", //получение верстака
+    "teamAdvancement minecraft:story/mine_stone": "add_score 50", //добычка камня
+    "teamAdvancement minecraft:story/upgrade_tools": "add_score 50", //получение каменной кирки
+    "teamAdvancement minecraft:end/dragon_egg": "add_score 50", //заполучите яйцо дракона
+    "teamAdvancement minecraft:adventure/root": "add_score 50", //убейте кого угодно или умрите
+    "teamAdvancement minecraft:adventure/kill_a_mob": "add_score 50", //убейте злобного монстра
+    "teamAdvancement minecraft:adventure/sleep_in_bed": "add_score 50", //ложитесь на кровать
+    "teamAdvancement minecraft:adventure/shoot_arrow": "add_score 50", //Попадите в кого-нибудь стрелой
+    "teamAdvancement minecraft:husbandry/root": "add_score 50", //Употребите что-нибудь
+
+    //достижения легкие(150 очков каждое)
+    "teamAdvancement minecraft:story/smelt_iron": "add_score 150", //получение железного слитка
+    "teamAdvancement minecraft:story/obtain_armor": "add_score 150", //получение железной брони
+    "teamAdvancement minecraft:story/lava_bucket": "add_score 150", //получение ведра с лавой
+    "teamAdvancement minecraft:story/iron_tools": "add_score 150", //получение железной кирки
+    "teamAdvancement minecraft:story/form_obsidian": "add_score 150", //получение обсидиана
+    "teamAdvancement minecraft:story/enter_the_nether": "add_score 150", //попасть в незер
+    "teamAdvancement minecraft:story/mine_diamond": "add_score 150", //получение алмаза
+    "teamAdvancement minecraft:nether/root": "add_score 150", //попадание в незер(другая вкладка)
+    "teamAdvancement minecraft:nether/find_bastion": "add_score 150", //попадите в бастион
+    "teamAdvancement minecraft:nether/find_fortress": "add_score 150", //войдите в крепость незера
+    "teamAdvancement minecraft:nether/obtain_crying_obsidian": "add_score 150", // добудьте плачущий обсидиан
+    "teamAdvancement minecraft:nether/distract_piglin": "add_score 150", //отвлеките пиглинов золотым слитком
+    "teamAdvancement minecraft:nether/loot_bastion": "add_score 150", //откройте сундук в развалинах бастиона
+    "teamAdvancement minecraft:nether/get_wither_skull": "add_score 150", //добудьте череп визер-скелета
+    "teamAdvancement minecraft:nether/obtain_blaze_rod": "add_score 150", //добудьте огненный стержень
+    "teamAdvancement minecraft:nether/brew_potion": "add_score 150", //сварите зелье
+    "teamAdvancement minecraft:end/root": "add_score 150", //войдите в энд
+    "teamAdvancement minecraft:end/enter_end_gateway": "add_score 150", //бросьте эндер-жемчуг во врата энда
+    "teamAdvancement minecraft:tadventure/ol_betsy": "add_score 150", //выстрелите из арбалета
+    "teamAdvancement minecraft:adventure/lighten_up": "add_score 150", //Соскребите топором окись с медной лампы, чтобы сделать её ярче.
+    "teamAdvancement minecraft:adventure/who_needs_rockets": "add_score 150", //Используйте заряд ветра, чтобы подлететь вверх на 8 блоков.
+    "teamAdvancement minecraft:husbandry/breed_an_animal": "add_score 150", //Скрестите животных
+    "teamAdvancement minecraft:husbandry/fishy_business": "add_score 150", //Поймайте рыбу
+    "teamAdvancement minecraft:husbandry/wax_off": "add_score 150", //Уберите воск с медного блока при помощи топора
+    //достижения средние(500 очков каждое)
+    "teamAdvancement minecraft:story/deflect_arrow": "add_score 500", //отразить щитом снаряд
+    "teamAdvancement minecraft:story/shiny_gear": "add_score 500", //получить часть алмазной брони в инвентарь
+    "teamAdvancement minecraft:story/enchant_item": "add_score 500", //зачаровать предмет на столе зачарований
+    "teamAdvancement minecraft:story/follow_ender_eye": "add_score 500", //войти в крепость с порталом края
+    "teamAdvancement minecraft:story/enter_the_end": "add_score 500", //войти в портал энда
+    "teamAdvancement minecraft:adventure/voluntary_exile": "add_score 500", //убейте главаря разбойников
+    "teamAdvancement minecraft:adventure/trade": "add_score 500", //купите что-нибудь у крестьян
+    "teamAdvancement minecraft:adventure/honey_block_slide": "add_score 500", //прыгните в блок меда для замедления падения
+    "teamAdvancement minecraft:adventure/avoid_vibration": "add_score 500", //прокрадитесь мимо скалк-сенсора будучи необнаруженным
+    "teamAdvancement minecraft:adventure/spyglass_at_ghast": "add_score 500", //взгляните на гаста через подзорную трубу
+    "teamAdvancement minecraft:adventure/kill_mob_near_sculk_catalyst": "add_score 500", //Убейте моба рядом со скалковым катализатором
+    "teamAdvancement minecraft:adventure/whos_the_pillager_now": "add_score 500", //Застрелите разбойника с арбалета
+    "teamAdvancement minecraft:adventure/walk_on_powder_snow_with_leather_boots": "add_score 500", //Пройдите по рыхлому снегу в кожанных ботинках
+    "teamAdvancement minecraft:adventure/spyglass_at_dragon": "add_score 500", //Взгляните на эндер-дракона через подзорную трубу
+    "teamAdvancement minecraft:adventure/bullseye": "add_score 500", //Попадите в яблочко мишени с более чем 30 блоков
+    "teamAdvancement minecraft:adventure/brush_armadillo": "add_score 500", //Добудьте щитки броненосца
+    "teamAdvancement minecraft:adventure/minecraft_trials_edition": "add_score 500", //Войдите в дворец испытаний
+    "teamAdvancement minecraft:adventure/crafters_crafting_crafters": "add_score 500", //Создайте сборщик при помощи сборщика
+    "teamAdvancement minecraft:adventure/under_lock_and_key": "add_score 500", //Отоприте хранилище ключом испытаний.
+    "teamAdvancement minecrafttadventure/blowback": "add_score 500", //Убейте вихря его же зарядом ветра.
+    "teamAdvancement minecraft:husbandry/place_dried_ghast_in_water": "add_score 500", //Поместите высохшего гаста в воду
+    "teamAdvancement minecraft:husbandry/safely_harvest_honey": "add_score 500", //Соберите мед в бутылочку не потревожив пчел при помощи костра
+    "teamAdvancement minecraft:husbandry/tame_an_animal": "add_score 500", //Приручите животное
+    "teamAdvancement minecraft:husbandry/make_a_sign_glow": "add_score 500", //Сделайте текст на табличке светящимся
+    "teamAdvancement minecraft:husbandry/tadpole_in_a_bucket": "add_score 500", //Поймайте головастика в ведро
+    "teamAdvancement minecraft:husbandry/plant_seed": "add_score 500", //Посадите в землю зерно и дождитесь пока оно вырастет
+    "teamAdvancement minecraft:husbandry/wax_on": "add_score 500", //Используйте пчелинные соты на медном блоке
+    "teamAdvancement minecraft:husbandry/tactical_fishing": "add_score 500", //Поймайте рыбу без удочки
+    "teamAdvancement minecraft:husbandry/axolotl_in_a_bucket": "add_score 500", //Поймайте аксолотля в ведро
+    "teamAdvancement minecraft:husbandry/plant_any_sniffer_seed": "add_score 500", //Посадите добытые Нюхачом семена
+    "teamAdvancement minecraft:husbandry/remove_wolf_armor": "add_score 500", //Снимите броню с волка при помощи ножниц
+    //достижения трудные(1000 очков каждое)
+    "teamAdvancement minecraft:nether/return_to_sender": "add_score 1000", //попадаите по гасту его же огненным зарядом
+    "teamAdvancement minecraft:nether/obtain_ancient_debris": "add_score 1000", //добудьте древние обломки
+    "teamAdvancement minecraft:nether/use_lodestone": "add_score 1000", //используйте компас на магнетите
+    "teamAdvancement minecraft:nether/charge_respawn_anchor": "add_score 1000", //полностью зарядите якорь возрождения
+    "teamAdvancement minecraft:nether/summon_wither": "add_score 1000", //призовите визера
+    "teamAdvancement minecraft:end/dragon_breath": "add_score 1000", //заполучите дыхание дракона
+    "teamAdvancement minecraft:end/find_end_city": "add_score 1000", //войдите в город энда
+    "teamAdvancement minecraft:adventure/heart_transplanter": "add_score 1000", //постройте структуру для призыва скрипуна
+    "teamAdvancement minecraft:adventure/read_power_of_chiseled_bookshelf": "add_score 1000", //Считайте силу сигнала резной книжной полки с помощью компаратора
+    "teamAdvancement minecraft:adventure/trim_with_any_armor_pattern": "add_score 1000", //нанесите отделку на броню на столе кузнеца
+    "teamAdvancement minecraft:adventure/salvage_sherd": "add_score 1000", //Очистите подозрительные песок и гравий и получите с каждого блока по одному глиняному черепку.
+    "teamAdvancement minecraft:adventure/throw_trident": "add_score 1000", //Метните трезубец
+    "teamAdvancement minecraft:adventure/totem_of_undying": "add_score 1000", //Воспользуйтесь тотемом бессмертия
+    "teamAdvancement minecraft:adventure/summon_iron_golem": "add_score 1000", //Cоздайте железного голема
+    "teamAdvancement minecraft:adventure/trim_with_all_exclusive_armor_patterns": "add_score 1000", //Хотя бы раз используйте шаблоны: «Шпиль», «Рыло», «Ребро», «Хранитель», «Тишина», «Вредина», «Прилив» и «Искатель»
+    "teamAdvancement minecraft:adventure/two_birds_one_arrow": "add_score 1000", //Убейте 2 фантомов 1 стрелой
+    "teamAdvancement minecraft:adventure/craft_decorated_pot_using_only_sherds": "add_score 1000", //Создайте узорчатую вазу из 4 глиняных черепков
+    "teamAdvancement minecraft:adventure/very_very_frightening": "add_score 1000", //Поразите крестьянина молнией при помощи трезубца
+    "teamAdvancement minecraft:adventure/sniper_duel": "add_score 1000", //Убейте скелета с расстояния более 50 метров
+    "teamAdvancement minecraft:adventure/revaulting": "add_score 1000", //Отоприте зловещее хранилище зловещим ключом испытаний.
+    "teamAdvancement minecraft:adventure/overoverkill": "add_score 1000", //Нанесите более 100 урона при помощи булавы
+    "teamAdvancement minecraft:husbandry/allay_deliver_item_to_player": "add_score 1000", //Заставьте тихоню доставлять вам предметы
+    "teamAdvancement minecraft:husbandry/ride_a_boat_with_a_goat": "add_score 1000", //Залезьте в лодку и плывите вместе с козой
+    "teamAdvancement minecraft:husbandry/feed_snifflet": "add_score 1000", //Покормите Нюхача
+    "teamAdvancement minecraft:husbandry/obtain_netherite_hoe": "add_score 1000", //+ незеритовая мотыга
+    "teamAdvancement minecraft:husbandry/kill_axolotl_target": "add_score 1000", //Скооперируйтесь с аксолотелем и выйграйте бой
+    "teamAdvancement minecraft:husbandry/repair_wolf_armor": "add_score 1000", //Почините поврежденную волчью броню
+
+
+    //достижения тяжелые(2500 очков каждое)
+    "teamAdvancement minecraft:story/cure_zombie_villager": "add_score 2500", //исцелить зомби-жителя
+    "teamAdvancement minecraft:nether/ride_strider": "add_score 2500", //прокатитесь на лавомерке управляя ей с помощью удочки с искаженным грибом
+    "teamAdvancement minecraft:nether/uneasy_alliance": "add_score 2500", //заманите гаста в обычный мир и убейте его
+    "teamAdvancement minecraft:nether/netherite_armor": "add_score 2500", //получите полный комплект незеритовой брони
+    "teamAdvancement minecraft:nether/ride_strider_in_overworld_lava": "add_score 2500", //проедьте на лавомерке 50 блоков по горизонтали! по лаве в верхнем мире
+    "teamAdvancement minecraft:nether/explore_nether": "add_score 2500", //исследуйте все биомы незера
+    "teamAdvancement minecraft:end/elytra": "add_score 2500", //заполучите элитры
+    "teamAdvancement minecraft:end/levitate": "add_score 2500", //пролевитируйте 50 блоков вверх
+    "teamAdvancement minecraft:adventure/spyglass_at_parrot": "add_score 2500", //взгляните на попугая через подзорную трубу
+    "teamAdvancement minecraft:adventure/lightning_rod_with_villager_no_fire": "add_score 2500", //	Необходимо находиться в пределах области 30 блоков от удара молнии в центре так, чтобы ни один блок поблизости не загорелся. При этом незатронутый крестьянин должен находиться внутри или в шести блоках над областью размером 30×30×30 блоков, центром которой будет считаться место удара молнии.
+    "teamAdvancement minecraft:adventure/fall_from_world_height": "add_score 2500", //Спрыгните с высоты Y=319 и приземлитесь на высоте Y=-59, при этом вертикальная дистанция должна превышать 379 блоков.
+    "teamAdvancement minecraft:adventure/hero_of_the_village": "add_score 2500", //Отразите нападение на деревню
+    "teamAdvancement minecraft:adventure/trade_at_world_height": "add_score 2500", //поторгуйтесь с крестьянином на высоте более 318
+    "teamAdvancement minecraft:adventure/arbalistic": "add_score 2500", //Убейте одним выстрелом из арбалета 5 разных мобов
+    "teamAdvancement minecraft:adventure/play_jukebox_in_meadows": "add_score 2500", //В биоме Луг используйте проигрыватель
+    "teamAdvancement minecraft:husbandry/silk_touch_nest": "add_score 2500", //С помощью «шёлкового касания» переместите пчелиное гнездо или улей с тремя пчёлами внутри
+    "teamAdvancement minecraft:husbandry/obtain_sniffer_egg": "add_score 2500", //Получите яйцо Нюхача
+    "teamAdvancement minecraft:husbandry/allay_deliver_cake_to_note_block": "add_score 2500", //Заставьте Тихоню бросить торт на нотный блок
+    "teamAdvancement minecraft:husbandry/whole_pack": "add_score 2500", //Приручите волков всех видов
+
+
+    //достижения невероятные(5000 очков каждое)
+    "teamAdvancement minecraft:nether/fast_travel": "add_score 5000", //перемещение более чем на 7к блоков(это невозможно)
+    "teamAdvancement minecraft:nether/create_beacon": "add_score 5000", //постройте и установите маяк
+    "teamAdvancement minecraft:end/respawn_dragon": "add_score 5000", //возродите эндер-дракона
+    "teamAdvancement minecraft:husbandry/complete_catalogue": "add_score 5000", //Приручите все виды кошек
+    "teamAdvancement minecraft:husbandry/leash_all_frog_variants": "add_score 5000", //Привяжите все виды лягушек на поводок
+    "teamAdvancement minecraft:husbandry/froglights": "add_score 5000", //Соберите в инвентаре все виды квамп
+    "teamAdvancement minecraft:": "add_score 50",
+    //достижения невозможные(10000 очков каждое)
+    "teamAdvancement minecraft:nether/create_full_beacon": "add_score 10000", //маяк на фулл
+    "teamAdvancement minecraft:nether/all_potions": "add_score 10000", //испытайте все эффекты зелий!
+    "teamAdvancement minecraft:nether/all_effects": "add_score 10000", //невозможное возможно!
+    "teamAdvancement minecraft:end/kill_dragon": "add_score 10000", //убейте эндер-дракона
+    "teamAdvancement minecraft:adventure/kill_all_mobs": "add_score 10000", //убейте по одному мобу каждого вида
+    "teamAdvancement minecraft:adventure/adventuring_time": "add_score 10000", //Найдите все биомы
+    "teamAdvancement minecraft:husbandry/bred_all_animals": "add_score 10000", //Вырастите все виды животных!
+    "teamAdvancement minecraft:husbandry/balanced_diet": "add_score 10000", //Попробуйте все съестное
+
+
+    "playerKilled": "add_score 500",
+    "playerTick 200": "add_score_by_lives 0 3 4 5"
 }
