@@ -16,15 +16,14 @@ import java.util.List;
 import java.util.Set;
 import java.util.function.Supplier;
 
-@SuppressWarnings({"unused"})
 public class SuppliedSidebar implements SidebarInterface {
-
 	private final Set<ServerGamePacketListenerImpl> players = new HashSet<>();
 	@Getter
 	private Sidebar.Priority priority;
 	@Getter
 	private int updateRate = 1;
-	private boolean isActive = false;
+	@Getter
+    private boolean isActive = false;
 	@Setter
 	@Getter
 	private boolean isDirty = false;
@@ -67,11 +66,7 @@ public class SuppliedSidebar implements SidebarInterface {
 		}
 	}
 
-	public boolean isActive() {
-		return this.isActive;
-	}
-
-	public void addPlayer(ServerGamePacketListenerImpl handler) {
+    public void addPlayer(ServerGamePacketListenerImpl handler) {
 		if (this.players.add(handler)) {
 			if (isActive) {
 				SidebarUtils.addSidebar(handler, this);

@@ -2,17 +2,16 @@ package dev.necr0manthre.innotournament.init;
 
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import dev.necr0manthre.innotournament.Innotournament;
-import dev.necr0manthre.innotournament.tournament.TournamentTeamManager;
-import dev.necr0manthre.innotournament.tournament_events.ITournamentEventListener;
-import dev.necr0manthre.innotournament.tournament_events.event_data.ISourcePlayerProvider;
-import dev.necr0manthre.innotournament.tournament_events.event_data.ITeamProvider;
-import dev.necr0manthre.innotournament.tournament_events.handlers.WorldBorderAction;
-import dev.necr0manthre.innotournament.tournament_events.parsing.IParser;
-import dev.necr0manthre.innotournament.tournament_events.parsing.TournamentEventHandlerParserRegistry;
-import dev.necr0manthre.innotournament.tournament_events.parsing.parsers.MultiArgumentParser;
-import dev.necr0manthre.innotournament.tournament_events.parsing.parsers.OneArgumentParser;
-import dev.necr0manthre.innotournament.tournament_events.parsing.parsers.SimpleDecoder;
-import dev.necr0manthre.innotournament.tournament_events.parsing.parsers.TwoArgumentParser;
+import dev.necr0manthre.innotournament.tournament.events.ITournamentEventListener;
+import dev.necr0manthre.innotournament.tournament.events.event_data.ISourcePlayerProvider;
+import dev.necr0manthre.innotournament.tournament.events.event_data.ITeamProvider;
+import dev.necr0manthre.innotournament.tournament.events.handlers.WorldBorderAction;
+import dev.necr0manthre.innotournament.tournament.events.parsing.IParser;
+import dev.necr0manthre.innotournament.tournament.events.parsing.TournamentEventHandlerParserRegistry;
+import dev.necr0manthre.innotournament.tournament.events.parsing.parsers.MultiArgumentParser;
+import dev.necr0manthre.innotournament.tournament.events.parsing.parsers.OneArgumentParser;
+import dev.necr0manthre.innotournament.tournament.events.parsing.parsers.SimpleDecoder;
+import dev.necr0manthre.innotournament.tournament.events.parsing.parsers.TwoArgumentParser;
 
 public interface InnoTournamentEventHandlers {
 	IParser<String, ITournamentEventListener<Object>> WORLD_BORDER = register(new OneArgumentParser<>("world_border", size -> new WorldBorderAction(Double.parseDouble(size), 0)));

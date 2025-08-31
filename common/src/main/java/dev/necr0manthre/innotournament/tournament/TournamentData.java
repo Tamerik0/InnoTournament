@@ -1,7 +1,7 @@
 package dev.necr0manthre.innotournament.tournament;
 
 import com.mojang.serialization.*;
-import dev.necr0manthre.innotournament.tournament_events.EventLoader;
+import dev.necr0manthre.innotournament.tournament.events.EventLoader;
 import lombok.AllArgsConstructor;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.Registries;

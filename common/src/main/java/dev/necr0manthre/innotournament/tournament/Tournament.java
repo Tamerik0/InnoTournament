@@ -7,8 +7,8 @@ import dev.architectury.event.events.common.EntityEvent;
 import dev.architectury.event.events.common.PlayerEvent;
 import dev.architectury.event.events.common.TickEvent;
 import dev.necr0manthre.innotournament.sidebar.SidebarManager;
-import dev.necr0manthre.innotournament.tournament_events.AbstractTournamentEvent;
-import dev.necr0manthre.innotournament.tournament_events.ITournamentEventListener;
+import dev.necr0manthre.innotournament.tournament.events.AbstractTournamentEvent;
+import dev.necr0manthre.innotournament.tournament.events.ITournamentEventListener;
 import dev.necr0manthre.innotournament.util.ServerBoundObjManager;
 import dev.necr0manthre.innotournament.util.ServerScheduler;
 import eu.pb4.sidebars.api.Sidebar;
@@ -51,7 +51,7 @@ public class Tournament implements ServerBoundObjManager.Removable {
     public final Event<Consumer<Object>> onStart = EventFactory.createLoop();
     public final Event<Consumer<Object>> onEnd = EventFactory.createLoop();
     public final Event<Consumer<Object>> onRemove = EventFactory.createLoop();
-    public final Event<Consumer<TournamentPlayer>> playerRunOutOfLives = EventFactory.createLoop();
+    public final Event<Consumer<dev.dominion.ecs.api.Entity>> playerRunOutOfLives = EventFactory.createLoop();
     private final GameType preStartGameMode;
     private final Map<AbstractTournamentEvent<?>, Set<ITournamentEventListener<?>>> preStartEvents;
     private final Map<AbstractTournamentEvent<?>, Set<ITournamentEventListener<?>>> mainEvents;
@@ -365,9 +365,9 @@ public class Tournament implements ServerBoundObjManager.Removable {
                 updateSidebars();
             }
             var top = getTopTeams(getTeamManager().getTeams().size());
-            getServer().getPlayerList().broadcastSystemMessage(Component.literal("Турнир завершён! Победила команда ").append(top.get(0).getPlayerTeam().getDisplayName()).append(" (" + top.get(0).getPlayers().stream().map(TournamentPlayer::getName).collect(Collectors.joining(" ")) + " )"), false);
+            getServer().getPlayerList().broadcastSystemMessage(Component.literal("Турнир завершён! Победила команда ").append(top.get(0).getPlayerTeam().getDisplayName()).append(" (" + top.get(0).getPlayers().stream().map(EcsPlayer::getName).collect(Collectors.joining(" ")) + " )"), false);
             for (int i = 0; i < top.size(); i++) {
-                getServer().getPlayerList().broadcastSystemMessage(Component.literal("[" + (i + 1) + "] ").append(top.get(i).getPlayerTeam().getDisplayName()).append(" " + top.get(i).score).append(" (" + top.get(i).getPlayers().stream().map(TournamentPlayer::getName).collect(Collectors.joining(" ")) + " )"), false);
+                getServer().getPlayerList().broadcastSystemMessage(Component.literal("[" + (i + 1) + "] ").append(top.get(i).getPlayerTeam().getDisplayName()).append(" " + top.get(i).score).append(" (" + top.get(i).getPlayers().stream().map(EcsPlayer::getName).collect(Collectors.joining(" ")) + " )"), false);
             }
             onEnd.invoker().accept(null);
             phase = 3;
@@ -425,7 +425,7 @@ public class Tournament implements ServerBoundObjManager.Removable {
         return EventResult.pass();
     }
 
-    public void setupPlayer(TournamentPlayer player) {
+    public void setupPlayer(EcsPlayer player) {
         player.tournament = new WeakReference<>(this);
         player.lives = 3;
         player.player.heal(100);
@@ -447,7 +447,7 @@ public class Tournament implements ServerBoundObjManager.Removable {
         team.tournament = new WeakReference<>(this);
     }
 
-    public void addScores(TournamentPlayer player, double score) {
+    public void addScores(EcsPlayer player, double score) {
         if (player.lives == 0) return;
         getTeamManager().getTeam(player).score += score * teamScoreModifiers[getTeamManager().getTeam(player).getPlayers().size()];
         updateSidebars();
@@ -465,7 +465,7 @@ public class Tournament implements ServerBoundObjManager.Removable {
         return sorted.subList(0, n);
     }
 
-    public void addPlayerToTeam(TournamentPlayer player, TournamentTeamManager.TournamentTeam team) {
+    public void addPlayerToTeam(EcsPlayer player, TournamentTeamManager.TournamentTeam team) {
         if (getTeamManager().getTeam(player) != null)
             getTeamManager().getTeam(player).removePlayer(player);
         var coeff = teamScoreModifiers[team.getPlayers().size()];
