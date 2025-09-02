@@ -1,25 +1,26 @@
 package dev.necr0manthre.innotournament.tournament.events.event_data;
 
-import dev.necr0manthre.innotournament.tournament.TournamentPlayer;
-import dev.necr0manthre.innotournament.tournament.TournamentTeamManager;
+import dev.dominion.ecs.api.Entity;
+import dev.necr0manthre.innotournament.teams.core.TeamManager;
 import lombok.Data;
 
 @Data
-public class PlayerKilled implements ISourcePlayerProvider, ITargetPlayerProvider, ITeamProvider{
-	private final TournamentPlayer sourcePlayer;
-	private final TournamentPlayer targetPlayer;
-	@Override
-	public TournamentPlayer getSourcePlayer() {
-		return sourcePlayer;
-	}
+public class PlayerKilled implements ISourcePlayerProvider, ITargetPlayerProvider, ITeamProvider {
+    private final Entity sourcePlayer;
+    private final Entity targetPlayer;
 
-	@Override
-	public TournamentPlayer getTargetPlayer() {
-		return targetPlayer;
-	}
+    @Override
+    public Entity getSourcePlayer() {
+        return sourcePlayer;
+    }
 
-	@Override
-	public TournamentTeamManager.TournamentTeam getTeam() {
-		return TournamentTeamManager.get(getSourcePlayer().getServerPlayer().get().server).getTeam(getSourcePlayer());
-	}
+    @Override
+    public Entity getTargetPlayer() {
+        return targetPlayer;
+    }
+
+    @Override
+    public Entity getTeam() {
+        return TeamManager.getPlayersTeam(getSourcePlayer()).orElse(null);
+    }
 }

@@ -1,7 +1,7 @@
 package dev.necr0manthre.innotournament.tournament.events.event_data;
 
-import dev.necr0manthre.innotournament.tournament.TournamentPlayer;
+import dev.dominion.ecs.api.Entity;
 
 public interface ISourcePlayerProvider {
-	TournamentPlayer getSourcePlayer();
+    Entity getSourcePlayer();
 }

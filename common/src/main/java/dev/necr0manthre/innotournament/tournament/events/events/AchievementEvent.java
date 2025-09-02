@@ -1,8 +1,8 @@
 package dev.necr0manthre.innotournament.tournament.events.events;
 
 import dev.architectury.event.events.common.PlayerEvent;
+import dev.necr0manthre.innotournament.players.PlayerManager;
 import dev.necr0manthre.innotournament.tournament.Tournament;
-import dev.necr0manthre.innotournament.tournament.TournamentPlayerManager;
 import dev.necr0manthre.innotournament.tournament.events.AbstractTournamentEvent;
 import dev.necr0manthre.innotournament.tournament.events.event_data.PlayerHolder;
 import net.minecraft.advancements.AdvancementHolder;
@@ -32,7 +32,7 @@ public class AchievementEvent extends AbstractTournamentEvent<PlayerHolder> {
 	PlayerEvent.PlayerAdvancement handler = this::handler;
 	public void handler(ServerPlayer player, AdvancementHolder advancement) {
 		if (advancement.id().toString().equals(achievement)) {
-			callback.accept(new PlayerHolder(TournamentPlayerManager.getStatic(player)));
+			callback.accept(new PlayerHolder(PlayerManager.getEntity(player)));
 		}
 	}
 }

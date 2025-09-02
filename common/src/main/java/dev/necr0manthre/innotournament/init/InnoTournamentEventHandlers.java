@@ -2,6 +2,7 @@ package dev.necr0manthre.innotournament.init;
 
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import dev.necr0manthre.innotournament.Innotournament;
+import dev.necr0manthre.innotournament.tournament.components.TournamentPlayer;
 import dev.necr0manthre.innotournament.tournament.events.ITournamentEventListener;
 import dev.necr0manthre.innotournament.tournament.events.event_data.ISourcePlayerProvider;
 import dev.necr0manthre.innotournament.tournament.events.event_data.ITeamProvider;
@@ -21,7 +22,7 @@ public interface InnoTournamentEventHandlers {
 	IParser<String, ITournamentEventListener<Object>> PLACE_START_BOX = register(new SimpleDecoder<>("place_start_box", () -> (tournament, obj) -> tournament.placeStartBox()));
 	IParser<String, ITournamentEventListener<Object>> REMOVE_START_BOX = register(new SimpleDecoder<>("remove_start_box", () -> (tournament, obj) -> tournament.removeStartBox()));
 	IParser<String, ITournamentEventListener<ITeamProvider>> SCORE = register(new OneArgumentParser<>("add_score", score -> (tournament, teamProvider) -> tournament.addScores(teamProvider.getTeam(), Integer.parseInt(score))));
-	IParser<String, ITournamentEventListener<ISourcePlayerProvider>> SCORE_FROM_LIVES = register(new MultiArgumentParser<>("add_score_by_lives", scores -> (tournament, playerProvider) -> tournament.addScores(playerProvider.getSourcePlayer(), Integer.parseInt(scores[playerProvider.getSourcePlayer().lives]))));
+	IParser<String, ITournamentEventListener<ISourcePlayerProvider>> SCORE_FROM_LIVES = register(new MultiArgumentParser<>("add_score_by_lives", scores -> (tournament, playerProvider) -> tournament.addScores(playerProvider.getSourcePlayer(), Integer.parseInt(scores[TournamentPlayer.getTournamentData(playerProvider.getSourcePlayer()).lives]))));
 	IParser<String, ITournamentEventListener<Object>> PVP = register(new OneArgumentParser<>("pvp", enabled -> (tournament, obj) -> tournament.getServer().setPvpAllowed(Boolean.parseBoolean(enabled))));
 	IParser<String, ITournamentEventListener<Object>> EXECUTE_COMMAND = register(new OneArgumentParser<>("execute_command", cmd -> (tournament, obj) -> {
 		try {

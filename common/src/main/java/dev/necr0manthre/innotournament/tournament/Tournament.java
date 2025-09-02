@@ -6,7 +6,16 @@ import dev.architectury.event.EventResult;
 import dev.architectury.event.events.common.EntityEvent;
 import dev.architectury.event.events.common.PlayerEvent;
 import dev.architectury.event.events.common.TickEvent;
+import dev.dominion.ecs.api.Entity;
+import dev.necr0manthre.innotournament.players.PlayerManager;
 import dev.necr0manthre.innotournament.sidebar.SidebarManager;
+import dev.necr0manthre.innotournament.teams.components.TeamOwner;
+import dev.necr0manthre.innotournament.teams.components.TeamSettings;
+import dev.necr0manthre.innotournament.teams.core.TeamManager;
+import dev.necr0manthre.innotournament.tournament.components.TeamAdvancements;
+import dev.necr0manthre.innotournament.tournament.components.TournamentPlayer;
+import dev.necr0manthre.innotournament.tournament.components.TeamScore;
+import dev.necr0manthre.innotournament.tournament.components.TournamentTeam;
 import dev.necr0manthre.innotournament.tournament.events.AbstractTournamentEvent;
 import dev.necr0manthre.innotournament.tournament.events.ITournamentEventListener;
 import dev.necr0manthre.innotournament.util.ServerBoundObjManager;
@@ -28,7 +37,6 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
-import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.Level;
@@ -51,7 +59,7 @@ public class Tournament implements ServerBoundObjManager.Removable {
     public final Event<Consumer<Object>> onStart = EventFactory.createLoop();
     public final Event<Consumer<Object>> onEnd = EventFactory.createLoop();
     public final Event<Consumer<Object>> onRemove = EventFactory.createLoop();
-    public final Event<Consumer<dev.dominion.ecs.api.Entity>> playerRunOutOfLives = EventFactory.createLoop();
+    public final Event<Consumer<Entity>> playerRunOutOfLives = EventFactory.createLoop();
     private final GameType preStartGameMode;
     private final Map<AbstractTournamentEvent<?>, Set<ITournamentEventListener<?>>> preStartEvents;
     private final Map<AbstractTournamentEvent<?>, Set<ITournamentEventListener<?>>> mainEvents;
@@ -138,7 +146,7 @@ public class Tournament implements ServerBoundObjManager.Removable {
         }
     }
 
-    private void handlePreStartRespawn(ServerPlayer player, boolean huy, Entity.RemovalReason removalReason) {
+    private void handlePreStartRespawn(ServerPlayer player, boolean huy, net.minecraft.world.entity.Entity.RemovalReason removalReason) {
         System.out.println("hello from " + this);
 
         player.setRespawnPosition(new ServerPlayer.RespawnConfig(tournamentPreSpawnDimension, tournamentPreSpawn, 0, true), false);
@@ -146,7 +154,7 @@ public class Tournament implements ServerBoundObjManager.Removable {
         }));
     }
 
-    private void handleRespawn(ServerPlayer player, boolean huy, Entity.RemovalReason removalReason) {
+    private void handleRespawn(ServerPlayer player, boolean huy, net.minecraft.world.entity.Entity.RemovalReason removalReason) {
         player.setRespawnPosition(new ServerPlayer.RespawnConfig(tournamentSpawnDimension, tournamentSpawn, 0, true), false);
         player.teleport(new TeleportTransition(getServer().getLevel(tournamentSpawnDimension), tournamentSpawn.getCenter(), Vec3.ZERO, 0, 0, entity -> {
         }));
@@ -166,15 +174,15 @@ public class Tournament implements ServerBoundObjManager.Removable {
             }
 
         } else if (phase == 2) {
-            var tournamentPlayer = TournamentPlayerManager.get(getServer()).get(player);
-
-            if (getTeamManager().getTeam(tournamentPlayer) == null) {
-                tournamentPlayer.tournament = null;
-                tournamentPlayer.player.setGameMode(GameType.SPECTATOR);
-                var lastWarning = lastWarningTicks.computeIfAbsent(tournamentPlayer.player.getUUID(), u -> 0);
+            var ecsPlayer = PlayerManager.getEntity(player);
+            var playerData = TournamentPlayer.getTournamentData(ecsPlayer);
+            if (TeamManager.getPlayersTeam(ecsPlayer).isEmpty()) {
+                playerData.tournament = null;
+                player.setGameMode(GameType.SPECTATOR);
+                var lastWarning = lastWarningTicks.computeIfAbsent(player.getUUID(), u -> 0);
                 if (getServer().getTickCount() - lastWarning > 1000) {
-                    lastWarningTicks.put(tournamentPlayer.player.getUUID(), getServer().getTickCount());
-                    tournamentPlayer.player.sendSystemMessage(
+                    lastWarningTicks.put(player.getUUID(), getServer().getTickCount());
+                    player.sendSystemMessage(
                             Component.literal("You don't have team. But you must have team to participate. You can create team with only you through ")
                                     .append(Component.literal("/teams create <YourAwesomeTeamName>")
                                             .withStyle(ChatFormatting.AQUA)
@@ -191,11 +199,11 @@ public class Tournament implements ServerBoundObjManager.Removable {
                 }
                 return;
             }
-            if (tournamentPlayer.lives == 0) {
-                tournamentPlayer.player.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, 3));
+            if (playerData.lives == 0) {
+                player.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, 3));
             }
-            if (tournamentPlayer.tournament == null || tournamentPlayer.tournament.get() != this) {
-                setupPlayer(tournamentPlayer);
+            if (playerData.tournament == null || playerData.tournament.get() != this) {
+                setupPlayer(player);
             }
         }
     }
@@ -204,6 +212,10 @@ public class Tournament implements ServerBoundObjManager.Removable {
         for (var player : new ArrayList<>(getServer().getPlayerList().getPlayers())) {
             checkPlayer(player);
         }
+    }
+
+    public TeamManager teamManager() {
+        return TeamManager.get(getServer());
     }
 
     TickEvent.Server prepareTick = this::prepareTick;
@@ -221,37 +233,39 @@ public class Tournament implements ServerBoundObjManager.Removable {
         TickEvent.SERVER_POST.register(prepareTick);
         this.sidebarManager = new SidebarManager(server, player -> new SidebarManager.SuppliedSidebarData(Sidebar.Priority.OVERRIDE, 400, () -> {
             var title = Component.literal("Innotournament v2!!!");
-            var team = TournamentTeamManager.get(getServer()).get(player.getTeam());
-            var teamName = team == null ? "No team" : team.getPlayerTeam().getName();
-            var teamDisplayName = team == null ? null : team.getPlayerTeam().getDisplayName();
+            var playerTeam = player.getTeam();
+            var teamName = playerTeam == null ? "No team" : playerTeam.getName();
+            var teamDisplayName = playerTeam == null ? null : playerTeam.getDisplayName();
             List<ImmutableSidebarLine> lines = new ArrayList<>();
             int i = 0;
+            var team = playerTeam == null ? null : teamManager().getEntity(playerTeam);
             lines.add(new ImmutableSidebarLine(i--, teamDisplayName == null ? Component.literal(teamName) : Component.empty().append(teamDisplayName).append(" (").append(Component.literal(teamName)).append(")"), BlankFormat.INSTANCE));
-            if (team != null) {
-                lines.add(new ImmutableSidebarLine(i--, Component.literal("Score: " + team.score), BlankFormat.INSTANCE));
-                for (var tournamentPlayer : team.getPlayers()) {
-                    lines.add(new ImmutableSidebarLine(i--, Component.literal(tournamentPlayer.getName()).append("  [%d]".formatted(tournamentPlayer.lives)), BlankFormat.INSTANCE));
+            if (playerTeam != null) {
+                lines.add(new ImmutableSidebarLine(i--, Component.literal("Score: " + TeamScore.getTeamScore(team)), BlankFormat.INSTANCE));
+                for (var tournamentPlayer : TeamManager.getPlayers(team)) {
+                    lines.add(new ImmutableSidebarLine(i--, Component.literal(tournamentPlayer.getName()).append("  [%d]".formatted(TournamentPlayer.getTournamentData(tournamentPlayer).lives)), BlankFormat.INSTANCE));
                 }
             }
+
             lines.add(new ImmutableSidebarLine(i--, Component.literal(""), BlankFormat.INSTANCE));
             lines.add(new ImmutableSidebarLine(i--, Component.literal("Top teams: "), BlankFormat.INSTANCE));
             var top5 = getTopTeams(5);
-            var top = getTopTeams(getTeamManager().getTeams().size());
+            var top = getTopTeams(teamManager().getAllTeams().size());
             var index = top.indexOf(team);
             for (int j = 0; j < Math.min(5, top5.size()); j++) {
                 if (top5.get(j) == team)
-                    lines.add(new ImmutableSidebarLine(i--, Component.literal("[" + (index + 1) + "] ").append(team.getPlayerTeam().getDisplayName()).append(" (You) ").append("(" + team.score + ")"), BlankFormat.INSTANCE));
+                    lines.add(new ImmutableSidebarLine(i--, Component.literal("[" + (index + 1) + "] ").append(playerTeam.getDisplayName()).append(" (You) ").append("(" + TeamScore.getTeamScore(team) + ")"), BlankFormat.INSTANCE));
                 else
-                    lines.add(new ImmutableSidebarLine(i--, Component.literal("[" + (j + 1) + "] ").append(top5.get(j).getPlayerTeam().getDisplayName()).append(" (" + top5.get(j).score + ")"), BlankFormat.INSTANCE));
+                    lines.add(new ImmutableSidebarLine(i--, Component.literal("[" + (j + 1) + "] ").append(TeamManager.getPlayerTeam(top5.get(j)).getDisplayName()).append(" (" + TeamScore.getTeamScore(top5.get(j)) + ")"), BlankFormat.INSTANCE));
             }
             if (top5.size() >= 5) {
                 if (index >= 5) {
                     if (index != 5)
                         lines.add(new ImmutableSidebarLine(i--, Component.literal("..."), BlankFormat.INSTANCE));
-                    lines.add(new ImmutableSidebarLine(i--, Component.literal("[" + (index + 1) + "] ").append(team.getPlayerTeam().getDisplayName()).append(" (You) ").append("(" + team.score + ")"), BlankFormat.INSTANCE));
+                    lines.add(new ImmutableSidebarLine(i--, Component.literal("[" + (index + 1) + "] ").append(TeamManager.getPlayerTeam(team).getDisplayName()).append(" (You) ").append("(" + TeamScore.getTeamScore(team) + ")"), BlankFormat.INSTANCE));
                 }
                 if (index >= 4 && top.size() > index + 1) {
-                    lines.add(new ImmutableSidebarLine(i--, Component.literal("[" + (index + 2) + "] ").append(top.get(index + 1).getPlayerTeam().getDisplayName()).append(" (" + team.score + ")"), BlankFormat.INSTANCE));
+                    lines.add(new ImmutableSidebarLine(i--, Component.literal("[" + (index + 2) + "] ").append(TeamManager.getPlayerTeam(top.get(index + 1)).getDisplayName()).append(" (" + TeamScore.getTeamScore(team) + ")"), BlankFormat.INSTANCE));
                 }
             }
             return new SidebarInterface.SidebarData(title, lines);
@@ -305,9 +319,9 @@ public class Tournament implements ServerBoundObjManager.Removable {
         }
         getServer().getLevel(tournamentSpawnDimension).setDefaultSpawnPos(tournamentSpawn, 0);
 
-        for (var team : TournamentTeamManager.get(getServer()).getTeams()) {
+        for (var team : teamManager().getAllTeams()) {
             setupTeam(team);
-            team.acceptAll = false;
+            TeamSettings.getSettings(team).acceptAll = false;
         }
         onStart.invoker().accept(null);
         checkAllPlayers();
@@ -315,21 +329,22 @@ public class Tournament implements ServerBoundObjManager.Removable {
     }
 
     public void checkAllTeams() {
-        for (var team : getTeamManager().getTeams())
+        for (var team : teamManager().getAllTeams())
             checkTeam(team);
     }
 
-    public void checkTeam(TournamentTeamManager.TournamentTeam team) {
+    public void checkTeam(Entity team) {
         if (phase != 2)
             return;
-        if (team.tournament == null || team.tournament.get() != this) {
+        var tournamentTeam = TournamentTeam.get(team);
+        if (tournamentTeam.tournament == null || tournamentTeam.tournament.get() != this) {
             setupTeam(team);
         }
-        if (team.owner == null || !team.getPlayers().contains(team.owner)) {
-            if (team.getPlayers().isEmpty())
-                getServer().getScoreboard().removePlayerTeam(team.getPlayerTeam());
+        if (TeamOwner.getTeamOwner(team) == null || !TeamManager.getPlayers(team).contains(TeamOwner.getTeamOwner(team))) {
+            if (TeamManager.getPlayers(team).isEmpty())
+                getServer().getScoreboard().removePlayerTeam(TeamManager.getPlayerTeam(team));
             else
-                team.owner = team.getPlayers().getFirst();
+                TeamOwner.setTeamOwner(team, TeamManager.getPlayers(team).getFirst());
         }
     }
 
@@ -340,12 +355,13 @@ public class Tournament implements ServerBoundObjManager.Removable {
     private void tick(MinecraftServer server) {
         if (phase != 2)
             return;
-        TournamentTeamManager.TournamentTeam t = null;
+        Entity t = null;
         boolean end = true;
-        for (var team : getTeamManager().getTeams()) {
+        for (var team : teamManager().getAllTeams()) {
             boolean alive = false;
-            for (var player : team.getPlayers()) {
-                if (player.player != null && !player.player.hasDisconnected() && player.lives != 0) {
+            for (var player : TeamManager.getPlayers(team)) {
+                var serverPlayer = PlayerManager.getServerPlayer(player);
+                if (serverPlayer.isPresent() && !serverPlayer.get().hasDisconnected() && TournamentPlayer.getTournamentData(player).lives != 0) {
                     alive = true;
                     break;
                 }
@@ -357,17 +373,17 @@ public class Tournament implements ServerBoundObjManager.Removable {
                     end = false;
             }
         }
-        if (getTeamManager().getTeams().isEmpty())
+        if (teamManager().getAllTeams().isEmpty())
             end = false;
         if (end) {
             if (t != null) {
-                t.score += lastTeamScore;
+                TeamScore.getScoreComponent(t).score += lastTeamScore;
                 updateSidebars();
             }
-            var top = getTopTeams(getTeamManager().getTeams().size());
-            getServer().getPlayerList().broadcastSystemMessage(Component.literal("Турнир завершён! Победила команда ").append(top.get(0).getPlayerTeam().getDisplayName()).append(" (" + top.get(0).getPlayers().stream().map(EcsPlayer::getName).collect(Collectors.joining(" ")) + " )"), false);
+            var top = getTopTeams(teamManager().getAllTeams().size());
+            getServer().getPlayerList().broadcastSystemMessage(Component.literal("Турнир завершён! Победила команда ").append(TeamManager.getPlayerTeam(top.get(0)).getDisplayName()).append(" (" + TeamManager.getPlayers(top.get(0)).stream().map(PlayerManager::getName).map(opt -> opt.orElse("Unknown")).collect(Collectors.joining(" ")) + " )"), false);
             for (int i = 0; i < top.size(); i++) {
-                getServer().getPlayerList().broadcastSystemMessage(Component.literal("[" + (i + 1) + "] ").append(top.get(i).getPlayerTeam().getDisplayName()).append(" " + top.get(i).score).append(" (" + top.get(i).getPlayers().stream().map(EcsPlayer::getName).collect(Collectors.joining(" ")) + " )"), false);
+                getServer().getPlayerList().broadcastSystemMessage(Component.literal("[" + (i + 1) + "] ").append(TeamManager.getPlayerTeam(top.get(i)).getDisplayName()).append(" " + TeamScore.getTeamScore(top.get(i))).append(" (" + TeamManager.getPlayers(top.get(i)).stream().map(PlayerManager::getName).map(opt -> opt.orElse("Unknown")).collect(Collectors.joining(" ")) + " )"), false);
             }
             onEnd.invoker().accept(null);
             phase = 3;
@@ -405,72 +421,65 @@ public class Tournament implements ServerBoundObjManager.Removable {
         return 0;
     }
 
-    public TournamentPlayerManager getPlayerManager() {
-        return TournamentPlayerManager.get(getServer());
-    }
-
-    public TournamentTeamManager getTeamManager() {
-        return TournamentTeamManager.get(getServer());
-    }
-
     private EventResult livingDeath(LivingEntity entity, DamageSource source) {
         if (entity instanceof ServerPlayer player) {
-            var tournamentPlayer = getPlayerManager().get(player);
-            if (tournamentPlayer.lives > 0) {
-                tournamentPlayer.lives--;
+            var tournamentPlayer = PlayerManager.getEntity(player);
+            var data = TournamentPlayer.getTournamentData(tournamentPlayer);
+            if (data.lives > 0) {
+                data.lives--;
                 updateSidebars();
-                if (tournamentPlayer.lives == 0) playerRunOutOfLives.invoker().accept(tournamentPlayer);
+                if (data.lives == 0) playerRunOutOfLives.invoker().accept(tournamentPlayer);
             }
         }
         return EventResult.pass();
     }
 
-    public void setupPlayer(EcsPlayer player) {
-        player.tournament = new WeakReference<>(this);
-        player.lives = 3;
-        player.player.heal(100);
+    public void setupPlayer(ServerPlayer player) {
+        var playerData = TournamentPlayer.getTournamentData(PlayerManager.getEntity(player));
+        playerData.tournament = new WeakReference<>(this);
+        playerData.lives = 3;
+        player.heal(100);
         for (var adv : getServer().getAdvancements().getAllAdvancements())
-            for (var huy : player.player.getAdvancements().getOrStartProgress(adv).getCompletedCriteria())
-                player.player.getAdvancements().revoke(adv, huy);
-        player.player.getInventory().clearContent();
-        player.player.getFoodData().setFoodLevel(100);
-        player.player.getFoodData().setSaturation(1);
-        player.player.teleport(new TeleportTransition(getServer().getLevel(tournamentSpawnDimension), tournamentSpawn.getCenter(), Vec3.ZERO, 0, 0, entity -> {
+            for (var huy : player.getAdvancements().getOrStartProgress(adv).getCompletedCriteria())
+                player.getAdvancements().revoke(adv, huy);
+        player.getInventory().clearContent();
+        player.getFoodData().setFoodLevel(100);
+        player.getFoodData().setSaturation(1);
+        player.teleport(new TeleportTransition(getServer().getLevel(tournamentSpawnDimension), tournamentSpawn.getCenter(), Vec3.ZERO, 0, 0, entity -> {
         }));
-        player.player.setGameMode(GameType.SURVIVAL);
-        player.tournament = new WeakReference<>(this);
+        player.setGameMode(GameType.SURVIVAL);
+        playerData.tournament = new WeakReference<>(this);
     }
 
-    public void setupTeam(TournamentTeamManager.TournamentTeam team) {
-        team.score = 0;
-        team.clearAdvancements();
-        team.tournament = new WeakReference<>(this);
+    public void setupTeam(Entity team) {
+        TeamScore.setTeamScore(team, 0);
+        TeamAdvancements.get(team).advancements.clear();
+        TournamentTeam.get(team).tournament = new WeakReference<>(this);
     }
 
-    public void addScores(EcsPlayer player, double score) {
-        if (player.lives == 0) return;
-        getTeamManager().getTeam(player).score += score * teamScoreModifiers[getTeamManager().getTeam(player).getPlayers().size()];
+    public void addScoresToPlayer(Entity player, double score) {
+        if (TournamentPlayer.getTournamentData(player).lives == 0) return;
+        var team = TeamManager.getPlayersTeam(player).orElseThrow();
+        TeamScore.getScoreComponent(team).score += score * teamScoreModifiers[TeamManager.getPlayers(team).size()];
         updateSidebars();
     }
 
-    public void addScores(TournamentTeamManager.TournamentTeam team, double score) {
-        team.score += score * teamScoreModifiers[team.getPlayers().size()];
+    public void addScores(Entity team, double score) {
+        TeamScore.getScoreComponent(team).score += score * teamScoreModifiers[TeamManager.getPlayers(team).size()];
         updateSidebars();
     }
 
-    public List<TournamentTeamManager.TournamentTeam> getTopTeams(int n) {
-        var sorted = getTeamManager().getTeams().stream().sorted(Comparator.comparing(t -> -t.score)).toList();
+    public List<Entity> getTopTeams(int n) {
+        var sorted = teamManager().getAllTeams().stream().sorted(Comparator.comparing((Entity t) -> -TeamScore.getTeamScore(t))).toList();
         if (sorted.size() < n)
             return sorted;
         return sorted.subList(0, n);
     }
 
-    public void addPlayerToTeam(EcsPlayer player, TournamentTeamManager.TournamentTeam team) {
-        if (getTeamManager().getTeam(player) != null)
-            getTeamManager().getTeam(player).removePlayer(player);
-        var coeff = teamScoreModifiers[team.getPlayers().size()];
-        team.addPlayer(player);
-        team.score *= teamScoreModifiers[team.getPlayers().size()] / coeff;
+
+    public void addPlayerToTeam(Entity player, Entity team) {
+        var coeff = teamScoreModifiers[TeamManager.getPlayers(team).size()];
+        TeamScore.getScoreComponent(team).score *= teamScoreModifiers[TeamManager.getPlayers(team).size()] / coeff;
     }
 
     @Override
