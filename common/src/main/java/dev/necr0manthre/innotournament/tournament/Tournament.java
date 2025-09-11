@@ -243,7 +243,7 @@ public class Tournament implements ServerBoundObjManager.Removable {
             if (playerTeam != null) {
                 lines.add(new ImmutableSidebarLine(i--, Component.literal("Score: " + TeamScore.getTeamScore(team)), BlankFormat.INSTANCE));
                 for (var tournamentPlayer : TeamManager.getPlayers(team)) {
-                    lines.add(new ImmutableSidebarLine(i--, Component.literal(tournamentPlayer.getName()).append("  [%d]".formatted(TournamentPlayer.getTournamentData(tournamentPlayer).lives)), BlankFormat.INSTANCE));
+                    lines.add(new ImmutableSidebarLine(i--, Component.empty().append(PlayerManager.getDisplayName(tournamentPlayer).orElse(Component.literal("Unknown"))).append("  [%d]".formatted(TournamentPlayer.getTournamentData(tournamentPlayer).lives)), BlankFormat.INSTANCE));
                 }
             }
 

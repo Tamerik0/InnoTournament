@@ -79,7 +79,7 @@ public class TeamManager implements ServerBoundObjManager.Removable {
 
     public static Optional<Entity> getPlayersTeam(Entity player) {
         var playerName = PlayerManager.getName(player).orElseThrow();
-        return Optional.ofNullable(get(player).getServer().getScoreboard().getPlayersTeam(playerName)).map(get(PlayerManager.get(player).getServer())::getEntity);
+        return Optional.ofNullable(PlayerManager.get(player).getServer().getScoreboard().getPlayersTeam(playerName)).map(get(PlayerManager.get(player).getServer())::getEntity);
     }
 
     public List<Entity> getAllTeams() {
@@ -96,7 +96,7 @@ public class TeamManager implements ServerBoundObjManager.Removable {
 
     public static List<Entity> getPlayers(Entity team) {
         var playerTeam = getPlayerTeam(team);
-        return playerTeam.getPlayers().stream().map(name -> get(team).getServer().getPlayerList().getPlayerByName(name)).filter(Objects::nonNull).map(PlayerManager::getEntity).toList();
+        return playerTeam.getPlayers().stream().map(name -> PlayerManager.get(get(team).getServer()).getEntity(name).orElseThrow(() -> new RuntimeException("Cannot get ECS entity for player with name " + name))).toList();
     }
 
     public static boolean changeName(Entity team, String newName) {

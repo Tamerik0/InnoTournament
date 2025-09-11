@@ -96,31 +96,30 @@ public class ItemGeneratorBlockEntity extends BlockEntity implements Container {
             if (!data.isEmpty()) {
                 if (timer2 >= 20) {
 //                    if (!InnoPersistentData.getServerState(world.getServer()).isPvpEnabled() && InnoPersistentData.getServerState(world.getServer()).getPhase() == 1) {
-                    if(false){
-                        for (var player : world.getServer().getPlayerList().getPlayers()) {
-                            boolean v = player.blockPosition().getCenter().distanceTo(pos.getCenter()) <= 5;
-                            boolean p = checkForcePvp(player);
-                            if (p && !v) {
-                                if (forcePvp.get(player.getUUID()) == this) {
-                                    forcePvp.put(player.getUUID(), null);
-                                } else {
-                                    continue;
-                                }
-                            } else if (!p && v) {
-                                forcePvp.put(player.getUUID(), this);
-
+                    for (var player : world.getServer().getPlayerList().getPlayers()) {
+                        boolean v = player.blockPosition().getCenter().distanceTo(pos.getCenter()) <= 5;
+                        boolean p = checkForcePvp(player);
+                        if (p && !v) {
+                            if (forcePvp.get(player.getUUID()) == this) {
+                                forcePvp.put(player.getUUID(), null);
                             } else {
                                 continue;
                             }
-                            player.sendSystemMessage(Component.literal(v ? "You entered area around generator. Now pvp is enabled for you." :
-                                    "You left area around generator. Now pvp is disabled for you."));
+                        } else if (!p && v) {
+                            forcePvp.put(player.getUUID(), this);
+
+                        } else {
+                            continue;
                         }
-                        timer2 = 0;
+                        player.sendSystemMessage(Component.literal(v ? "You entered area around generator. Now pvp is enabled for you." :
+                                "You left area around generator. Now pvp is disabled for you."));
                     }
+                    timer2 = 0;
+
                 } else {
                     timer2++;
                 }
-                if(data.size()<=level+1)
+                if (data.size() <= level + 1)
                     readyForNextLevel = false;
                 if (readyForNextLevel) {
                     if (timer >= data.get(level + 1).generationTime / Innotournament.getGeneratorSpeed(world.getServer())) {

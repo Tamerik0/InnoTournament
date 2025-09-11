@@ -358,6 +358,7 @@ public class TeamsCommand {
             team2.setDisplayName(displayName);
             var teamEntity = teamManager(ctx).getEntity(team2);
             var playerEntity = player(ctx).orElseThrow();
+            TeamOwner.setTeamOwner(teamEntity, playerEntity);
             TeamManager.forceAddPlayer(teamEntity, playerEntity);
             ctx.getSource().sendSuccess(() -> Component.translatable("commands.team.add.success", team2.getDisplayName()), true);
             return scoreboard.getPlayerTeams().size();
