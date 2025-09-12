@@ -1,7 +1,7 @@
 package dev.necr0manthre.innotournament.tournament.components;
 
 import dev.dominion.ecs.api.Entity;
-import dev.necr0manthre.innotournament.TournamentUtils;
+import dev.necr0manthre.innotournament.util.TournamentUtils;
 
 public class TeamScore {
     public double score;
@@ -17,5 +17,4 @@ public class TeamScore {
     public static void setTeamScore(Entity team, double score){
         getScoreComponent(team).score = score;
     }
-
 }

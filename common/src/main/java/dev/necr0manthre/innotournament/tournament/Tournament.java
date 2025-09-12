@@ -20,6 +20,7 @@ import dev.necr0manthre.innotournament.tournament.events.AbstractTournamentEvent
 import dev.necr0manthre.innotournament.tournament.events.ITournamentEventListener;
 import dev.necr0manthre.innotournament.util.ServerBoundObjManager;
 import dev.necr0manthre.innotournament.util.ServerScheduler;
+import dev.necr0manthre.innotournament.util.TournamentUtils;
 import eu.pb4.sidebars.api.Sidebar;
 import eu.pb4.sidebars.api.SidebarInterface;
 import eu.pb4.sidebars.api.lines.ImmutableSidebarLine;
@@ -234,14 +235,13 @@ public class Tournament implements ServerBoundObjManager.Removable {
         this.sidebarManager = new SidebarManager(server, player -> new SidebarManager.SuppliedSidebarData(Sidebar.Priority.OVERRIDE, 400, () -> {
             var title = Component.literal("Innotournament v2!!!");
             var playerTeam = player.getTeam();
-            var teamName = playerTeam == null ? "No team" : playerTeam.getName();
             var teamDisplayName = playerTeam == null ? null : playerTeam.getDisplayName();
             List<ImmutableSidebarLine> lines = new ArrayList<>();
             int i = 0;
             var team = playerTeam == null ? null : teamManager().getEntity(playerTeam);
-            lines.add(new ImmutableSidebarLine(i--, teamDisplayName == null ? Component.literal(teamName) : Component.empty().append(teamDisplayName).append(" (").append(Component.literal(teamName)).append(")"), BlankFormat.INSTANCE));
-            if (playerTeam != null) {
-                lines.add(new ImmutableSidebarLine(i--, Component.literal("Score: " + TeamScore.getTeamScore(team)), BlankFormat.INSTANCE));
+            lines.add(new ImmutableSidebarLine(i--, team == null ? Component.literal("You have no team") : Component.literal("Your team: ").append(teamDisplayName), BlankFormat.INSTANCE));
+            if (team != null) {
+                lines.add(new ImmutableSidebarLine(i--, Component.literal("Score: " + TournamentUtils.formatTeamScore(team)), BlankFormat.INSTANCE));
                 for (var tournamentPlayer : TeamManager.getPlayers(team)) {
                     lines.add(new ImmutableSidebarLine(i--, Component.empty().append(PlayerManager.getDisplayName(tournamentPlayer).orElse(Component.literal("Unknown"))).append("  [%d]".formatted(TournamentPlayer.getTournamentData(tournamentPlayer).lives)), BlankFormat.INSTANCE));
                 }
@@ -254,18 +254,18 @@ public class Tournament implements ServerBoundObjManager.Removable {
             var index = top.indexOf(team);
             for (int j = 0; j < Math.min(5, top5.size()); j++) {
                 if (top5.get(j) == team)
-                    lines.add(new ImmutableSidebarLine(i--, Component.literal("[" + (index + 1) + "] ").append(playerTeam.getDisplayName()).append(" (You) ").append("(" + TeamScore.getTeamScore(team) + ")"), BlankFormat.INSTANCE));
+                    lines.add(new ImmutableSidebarLine(i--, Component.literal("[" + (index + 1) + "] ").append(playerTeam.getDisplayName()).append(" (You) ").append("(" + TournamentUtils.formatTeamScore(team) + ")"), BlankFormat.INSTANCE));
                 else
-                    lines.add(new ImmutableSidebarLine(i--, Component.literal("[" + (j + 1) + "] ").append(TeamManager.getPlayerTeam(top5.get(j)).getDisplayName()).append(" (" + TeamScore.getTeamScore(top5.get(j)) + ")"), BlankFormat.INSTANCE));
+                    lines.add(new ImmutableSidebarLine(i--, Component.literal("[" + (j + 1) + "] ").append(TeamManager.getPlayerTeam(top5.get(j)).getDisplayName()).append(" (" + TournamentUtils.formatTeamScore(top5.get(j)) + ")"), BlankFormat.INSTANCE));
             }
             if (top5.size() >= 5) {
                 if (index >= 5) {
                     if (index != 5)
                         lines.add(new ImmutableSidebarLine(i--, Component.literal("..."), BlankFormat.INSTANCE));
-                    lines.add(new ImmutableSidebarLine(i--, Component.literal("[" + (index + 1) + "] ").append(TeamManager.getPlayerTeam(team).getDisplayName()).append(" (You) ").append("(" + TeamScore.getTeamScore(team) + ")"), BlankFormat.INSTANCE));
+                    lines.add(new ImmutableSidebarLine(i--, Component.literal("[" + (index + 1) + "] ").append(TeamManager.getPlayerTeam(team).getDisplayName()).append(" (You) ").append("(" + TournamentUtils.formatTeamScore(team) + ")"), BlankFormat.INSTANCE));
                 }
                 if (index >= 4 && top.size() > index + 1) {
-                    lines.add(new ImmutableSidebarLine(i--, Component.literal("[" + (index + 2) + "] ").append(TeamManager.getPlayerTeam(top.get(index + 1)).getDisplayName()).append(" (" + TeamScore.getTeamScore(team) + ")"), BlankFormat.INSTANCE));
+                    lines.add(new ImmutableSidebarLine(i--, Component.literal("[" + (index + 2) + "] ").append(TeamManager.getPlayerTeam(top.get(index + 1)).getDisplayName()).append(" (" + TournamentUtils.formatTeamScore(team) + ")"), BlankFormat.INSTANCE));
                 }
             }
             return new SidebarInterface.SidebarData(title, lines);
@@ -383,7 +383,7 @@ public class Tournament implements ServerBoundObjManager.Removable {
             var top = getTopTeams(teamManager().getAllTeams().size());
             getServer().getPlayerList().broadcastSystemMessage(Component.literal("Турнир завершён! Победила команда ").append(TeamManager.getPlayerTeam(top.get(0)).getDisplayName()).append(" (" + TeamManager.getPlayers(top.get(0)).stream().map(PlayerManager::getName).map(opt -> opt.orElse("Unknown")).collect(Collectors.joining(" ")) + " )"), false);
             for (int i = 0; i < top.size(); i++) {
-                getServer().getPlayerList().broadcastSystemMessage(Component.literal("[" + (i + 1) + "] ").append(TeamManager.getPlayerTeam(top.get(i)).getDisplayName()).append(" " + TeamScore.getTeamScore(top.get(i))).append(" (" + TeamManager.getPlayers(top.get(i)).stream().map(PlayerManager::getName).map(opt -> opt.orElse("Unknown")).collect(Collectors.joining(" ")) + " )"), false);
+                getServer().getPlayerList().broadcastSystemMessage(Component.literal("[" + (i + 1) + "] ").append(TeamManager.getPlayerTeam(top.get(i)).getDisplayName()).append(" " + TournamentUtils.formatTeamScore(top.get(i))).append(" (" + TeamManager.getPlayers(top.get(i)).stream().map(PlayerManager::getName).map(opt -> opt.orElse("Unknown")).collect(Collectors.joining(" ")) + " )"), false);
             }
             onEnd.invoker().accept(null);
             phase = 3;
@@ -395,12 +395,6 @@ public class Tournament implements ServerBoundObjManager.Removable {
                     } catch (Exception ignored) {
                     }
                 });
-//				ServerScheduler.scheduleServerPost(0, () -> {
-//					try {
-//						event.remove();
-//					} catch (Exception ignored) {
-//					}
-//				});
             }
 
             ServerScheduler.scheduleServerPre(0, () -> {
@@ -474,12 +468,6 @@ public class Tournament implements ServerBoundObjManager.Removable {
         if (sorted.size() < n)
             return sorted;
         return sorted.subList(0, n);
-    }
-
-
-    public void addPlayerToTeam(Entity player, Entity team) {
-        var coeff = teamScoreModifiers[TeamManager.getPlayers(team).size()];
-        TeamScore.getScoreComponent(team).score *= teamScoreModifiers[TeamManager.getPlayers(team).size()] / coeff;
     }
 
     @Override

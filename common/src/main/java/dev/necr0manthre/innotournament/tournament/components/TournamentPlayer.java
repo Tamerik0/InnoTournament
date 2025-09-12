@@ -1,7 +1,7 @@
 package dev.necr0manthre.innotournament.tournament.components;
 
 import dev.dominion.ecs.api.Entity;
-import dev.necr0manthre.innotournament.TournamentUtils;
+import dev.necr0manthre.innotournament.util.TournamentUtils;
 import dev.necr0manthre.innotournament.tournament.Tournament;
 
 import java.lang.ref.WeakReference;

@@ -3,7 +3,7 @@ plugins {
     id 'architectury-plugin' version '3.4-SNAPSHOT'
     id 'com.github.johnrengelman.shadow' version '8.1.1' apply false
 }
-
+apply from: "config.gradle"
 architectury {
     minecraft = project.minecraft_version
 }
@@ -39,6 +39,12 @@ subprojects {
 
         sourceCompatibility = JavaVersion.VERSION_21
         targetCompatibility = JavaVersion.VERSION_21
+
+        // Ensure Gradle uses JDK 21 for compilation and runs (Minecraft 1.21.x requires Java 21)
+        // This avoids using a newer system JDK (e.g., JDK 24) that can break annotation processors like Lombok
+        toolchain {
+            languageVersion = JavaLanguageVersion.of(21)
+        }
     }
 
     tasks.withType(JavaCompile).configureEach {
@@ -57,9 +63,20 @@ subprojects {
         }
     }
 
-    loom{
-        runs{
-            server{
+    loom {
+        runs {
+            client {
+                def overrideUsername = System.getProperty('username')
+                if (project.name == "fabric") {
+                    def user = overrideUsername ?: fabricUsername
+                    programArgs '--username', user
+                    vmArgs "-Dfabric.development.user.name=${user}"
+                } else if (project.name == "neoforge" || project.name == "forge") {
+                    def user = overrideUsername ?: forgeUsername
+                    programArgs '--username', user
+                }
+            }
+            server {
                 vmArg "-Xmx20G"
             }
         }

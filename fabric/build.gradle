@@ -51,11 +51,3 @@ shadowJar {
 remapJar {
     input.set shadowJar.archiveFile
 }
-//loom {
-//    runs {
-//        client {
-//            property 'forge.logging.console.level', 'debug'
-//            programArgs '--username', 'Necr0manthre', '--accessToken', "", '--uuid', '7b02056d-fe24-4760-a741-d3405c00a7ec'
-//        }
-//    }
-//}
