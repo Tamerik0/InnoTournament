@@ -1,8 +1,6 @@
 package dev.necr0manthre.innotournament.blocks.blockentities;
 
 
-import dev.architectury.event.events.common.LifecycleEvent;
-import dev.architectury.hooks.block.BlockEntityHooks;
 import dev.necr0manthre.innotournament.Innotournament;
 import dev.necr0manthre.innotournament.blocks.ItemGeneratorBlock;
 import dev.necr0manthre.innotournament.init.InnoBlockEntities;
@@ -39,6 +37,11 @@ public class ItemGeneratorBlockEntity extends BlockEntity implements Container {
     int level = 0;
     boolean readyForNextLevel = false;
     private static HashMap<UUID, ItemGeneratorBlockEntity> forcePvp = new HashMap<>();
+    private static Set<BlockPos> cleared = new HashSet<>();
+
+    public static void clearAll() {
+        cleared.clear();
+    }
 
     public static boolean checkForcePvp(ServerPlayer player) {
         return forcePvp.getOrDefault(player.getUUID(), null) != null;
@@ -57,7 +60,7 @@ public class ItemGeneratorBlockEntity extends BlockEntity implements Container {
     }
 
     private int timer;
-    private int timer2 = 0;
+    //    private int timer2 = 0;
     private final NonNullList<ItemStack> items;
 
     public ItemGeneratorBlockEntity(BlockPos pos, BlockState state) {
@@ -93,32 +96,38 @@ public class ItemGeneratorBlockEntity extends BlockEntity implements Container {
 
     public void tick(Level world, BlockPos pos, BlockState state) {
         if (!world.isClientSide) {
+            if (!cleared.contains(pos)) {
+                clearContent();
+                timer = 0;
+                level = 0;
+                readyForNextLevel = false;
+                cleared.add(pos);
+            }
             if (!data.isEmpty()) {
-                if (timer2 >= 20) {
-//                    if (!InnoPersistentData.getServerState(world.getServer()).isPvpEnabled() && InnoPersistentData.getServerState(world.getServer()).getPhase() == 1) {
-                    for (var player : world.getServer().getPlayerList().getPlayers()) {
-                        boolean v = player.blockPosition().getCenter().distanceTo(pos.getCenter()) <= 5;
-                        boolean p = checkForcePvp(player);
-                        if (p && !v) {
-                            if (forcePvp.get(player.getUUID()) == this) {
-                                forcePvp.put(player.getUUID(), null);
-                            } else {
-                                continue;
-                            }
-                        } else if (!p && v) {
-                            forcePvp.put(player.getUUID(), this);
-
-                        } else {
-                            continue;
-                        }
-                        player.sendSystemMessage(Component.literal(v ? "You entered area around generator. Now pvp is enabled for you." :
-                                "You left area around generator. Now pvp is disabled for you."));
-                    }
-                    timer2 = 0;
-
-                } else {
-                    timer2++;
-                }
+//                if (timer2 >= 20) {
+//                    for (var player : world.getServer().getPlayerList().getPlayers()) {
+//                        boolean v = player.blockPosition().getCenter().distanceTo(pos.getCenter()) <= 5;
+//                        boolean p = checkForcePvp(player);
+//                        if (p && !v) {
+//                            if (forcePvp.get(player.getUUID()) == this) {
+//                                forcePvp.put(player.getUUID(), null);
+//                            } else {
+//                                continue;
+//                            }
+//                        } else if (!p && v) {
+//                            forcePvp.put(player.getUUID(), this);
+//
+//                        } else {
+//                            continue;
+//                        }
+//                        player.sendSystemMessage(Component.literal(v ? "You entered area around generator. Now pvp is enabled for you." :
+//                                "You left area around generator. Now pvp is disabled for you."));
+//                    }
+//                    timer2 = 0;
+//
+//                } else {
+//                    timer2++;
+//                }
                 if (data.size() <= level + 1)
                     readyForNextLevel = false;
                 if (readyForNextLevel) {

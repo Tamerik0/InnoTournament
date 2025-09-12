@@ -1,5 +1,6 @@
 package dev.necr0manthre.innotournament.commands;
 
+import com.mojang.authlib.GameProfile;
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.BoolArgumentType;
@@ -101,7 +102,7 @@ public class TeamsCommand {
                 if (isOwner) {
                     ans.append(Component.literal(" [Kick]").withStyle(ChatFormatting.RED)
                             .withStyle(Style.EMPTY
-                                    .withClickEvent(new ClickEvent.RunCommand("/teams tryKick " + player1.getName()))
+                                    .withClickEvent(new ClickEvent.RunCommand("/teams tryKick " + PlayerManager.getGameProfile(player1).map(GameProfile::getName).orElseThrow()))
                                     .withHoverEvent(new HoverEvent.ShowText(Component.literal("Click to kick ").append(PlayerManager.getDisplayName(player1).orElse(Component.literal("Unknown player"))).append(" from your team")))));
                 }
                 if (player1 == TeamOwner.getTeamOwner(team)) {
@@ -239,8 +240,6 @@ public class TeamsCommand {
                                             .append(TeamManager.getPlayerTeam(teamEntity).getDisplayName())
                                             .append(" ")
                                             .append(Component.literal("[Accept]").withStyle(Style.EMPTY.withColor(0x00FF00).withClickEvent(new ClickEvent.RunCommand("/teams join " + TeamManager.getPlayerTeam(teamEntity).getName()))))
-                                            .append(" ")
-                                            .append(Component.literal("[Reject]").withStyle(Style.EMPTY.withColor(0xFF0000).withClickEvent(new ClickEvent.RunCommand("/teams reject " + TeamManager.getPlayerTeam(teamEntity).getName()))))
                             ));
                             ctx.getSource().sendSuccess(() -> Component.literal("Invite sent"), false);
                             return 1;
@@ -292,6 +291,7 @@ public class TeamsCommand {
                             if (!checkOwner(ctx)) return 1;
                             var t = team(ctx).orElseThrow();
                             TeamSettings.getSettings(t).acceptAll = BoolArgumentType.getBool(ctx, "acceptAll");
+                            ctx.getSource().sendSuccess(() -> Component.literal("Your team now accepts all: " + TeamSettings.getSettings(t).acceptAll), false);
                             return 1;
                         })));
 

@@ -7,6 +7,7 @@ import dev.necr0manthre.innotournament.players.PlayerManager;
 import dev.necr0manthre.innotournament.teams.core.TeamManager;
 import dev.necr0manthre.innotournament.tournament.components.TeamAdvancements;
 import dev.necr0manthre.innotournament.tournament.events.ITeamAdvancementEventHandler;
+import dev.necr0manthre.innotournament.tournament.events.event_data.TeamAdvancement;
 import net.minecraft.advancements.AdvancementHolder;
 import net.minecraft.server.PlayerAdvancements;
 import net.minecraft.server.level.ServerPlayer;
@@ -34,6 +35,10 @@ public class TournamentAdvancementHandler {
         var team = TeamManager.getPlayersTeam(player);
         if (team.isEmpty())
             return;
+        if (!TeamAdvancements.get(team.get()).advancements.contains(advancement)) {
+            TeamAdvancements.get(team.get()).advancements.add(advancement);
+            teamAdvancementEvent.invoker().handle(new TeamAdvancement(team.get(), advancement));
+        }
         for (var player1 : TeamManager.getPlayers(team.get())) {
             PlayerManager.getServerPlayer(player1).ifPresent(p -> {
                 PlayerAdvancements advancements = p.getAdvancements();

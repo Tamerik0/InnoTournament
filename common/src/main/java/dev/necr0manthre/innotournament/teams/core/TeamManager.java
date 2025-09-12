@@ -52,6 +52,9 @@ public class TeamManager implements ServerBoundObjManager.Removable {
             return entity;
         });
     }
+    static {
+        register();
+    }
 
     public static void register() {
         managerMap.register();
@@ -105,7 +108,7 @@ public class TeamManager implements ServerBoundObjManager.Removable {
         if (scoreboard.getPlayerTeam(newName) != null)
             return false;
         var playerTeam = scoreboard.addPlayerTeam(newName);
-        for (var member : lastTeam.getPlayers()) {
+        for (var member : List.copyOf(lastTeam.getPlayers())) {
             scoreboard.addPlayerToTeam(member, playerTeam);
         }
         playerTeam.setAllowFriendlyFire(lastTeam.isAllowFriendlyFire());

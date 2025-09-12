@@ -7,11 +7,13 @@ import dev.architectury.event.events.common.EntityEvent;
 import dev.architectury.event.events.common.PlayerEvent;
 import dev.architectury.event.events.common.TickEvent;
 import dev.dominion.ecs.api.Entity;
+import dev.necr0manthre.innotournament.blocks.blockentities.ItemGeneratorBlockEntity;
 import dev.necr0manthre.innotournament.players.PlayerManager;
 import dev.necr0manthre.innotournament.sidebar.SidebarManager;
 import dev.necr0manthre.innotournament.teams.components.TeamOwner;
 import dev.necr0manthre.innotournament.teams.components.TeamSettings;
 import dev.necr0manthre.innotournament.teams.core.TeamManager;
+import dev.necr0manthre.innotournament.teams.events.PlayerTeamEvent;
 import dev.necr0manthre.innotournament.tournament.components.TeamAdvancements;
 import dev.necr0manthre.innotournament.tournament.components.TournamentPlayer;
 import dev.necr0manthre.innotournament.tournament.components.TeamScore;
@@ -132,8 +134,10 @@ public class Tournament implements ServerBoundObjManager.Removable {
         TickEvent.SERVER_POST.unregister(prepareTick);
         EntityEvent.LIVING_DEATH.unregister(livingDeath);
         advancementHandler.unregister();
+        TeamManager.PLAYER_JOIN_TEAM_EVENT.unregister(onPlayerJoinTeam);
         System.out.println(this + " is removed");
     }
+
 
     public void placeStartBox() {
         startBoxStructure = getServer().getStructureManager().getOrCreate(startBoxStructureResourceLocation);
@@ -224,6 +228,7 @@ public class Tournament implements ServerBoundObjManager.Removable {
     EntityEvent.LivingDeath livingDeath = this::livingDeath;
     PlayerEvent.PlayerRespawn handleRespawn = this::handleRespawn;
     TickEvent.Server tick = this::tick;
+    Consumer<PlayerTeamEvent> onPlayerJoinTeam = this::onPlayerJoinTeam;
 
     public void prepare(MinecraftServer server) {
         if (phase == 1) throw new IllegalStateException("Tournament is already prepared");
@@ -302,6 +307,7 @@ public class Tournament implements ServerBoundObjManager.Removable {
         phase = 2;
         PlayerEvent.PLAYER_RESPAWN.unregister(handlePreStartRespawn);
         PlayerEvent.PLAYER_RESPAWN.register(handleRespawn);
+        TeamManager.PLAYER_JOIN_TEAM_EVENT.register(onPlayerJoinTeam);
         TickEvent.SERVER_POST.register(tick);
         startTime = getServer().overworld().getGameTime();
         if (tournamentSpawnDimension.equals(Level.OVERWORLD)) {
@@ -326,6 +332,7 @@ public class Tournament implements ServerBoundObjManager.Removable {
         onStart.invoker().accept(null);
         checkAllPlayers();
         checkAllTeams();
+        ItemGeneratorBlockEntity.clearAll();
     }
 
     public void checkAllTeams() {
@@ -468,6 +475,28 @@ public class Tournament implements ServerBoundObjManager.Removable {
         if (sorted.size() < n)
             return sorted;
         return sorted.subList(0, n);
+    }
+
+    public void onPlayerJoinTeam(PlayerTeamEvent event) {
+        if (phase != 2)
+            return;
+        var coeff = teamScoreModifiers[TeamManager.getPlayers(event.team).size()];
+        TeamScore.getScoreComponent(event.team).score *= teamScoreModifiers[TeamManager.getPlayers(event.team).size() + 1] / coeff;
+        checkTeam(event.team);
+        updateSidebars();
+    }
+
+    public void onPlayerLeaveTeam(PlayerTeamEvent event) {
+        if (phase != 2)
+            return;
+        if (TeamManager.getPlayers(event.team).isEmpty()) {
+            TeamScore.getScoreComponent(event.team).score = 0;
+        } else {
+            var coeff = teamScoreModifiers[TeamManager.getPlayers(event.team).size() + 1];
+            TeamScore.getScoreComponent(event.team).score *= teamScoreModifiers[TeamManager.getPlayers(event.team).size()] / coeff;
+        }
+        checkTeam(event.team);
+        updateSidebars();
     }
 
     @Override
