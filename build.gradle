@@ -32,6 +32,10 @@ subprojects {
         compileOnly 'org.projectlombok:lombok:1.18.30'
         annotationProcessor 'org.projectlombok:lombok:1.18.30'
         implementation "dev.dominion.ecs:dominion-ecs-engine:0.9.0"
+        if (project.name != "common") {
+            include "dev.dominion.ecs:dominion-ecs-engine:0.9.0"
+            include "dev.dominion.ecs:dominion-ecs-api:0.9.0"
+        }
     }
 
     java {
